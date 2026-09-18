@@ -1,0 +1,35 @@
+\begin{table}[H]
+\centering
+\caption{Selected and attained constraint radii and independent-test performance. Entries are Monte Carlo means with Monte Carlo standard errors in parentheses over 500 attempted replications. Test deviance is evaluated on an independent sample of size 2,000. Signed radius error is $\lVert\widehat\beta\rVert_1-C^\star$.}
+\label{Table: revised primary performance}
+\begin{adjustbox}{width=\textwidth}
+\scriptsize
+\begin{tabular}{llrrrr}
+\hline
+Setting & Method & Signed radius error & $C_{\rm sel}$ & $\lVert\widehat\beta\rVert_1$ & Test deviance \\
+\hline
+Gaussian independent, $n=500$ & PanIC-CF & -0.045 (0.010) & 3.117 (0.010) & 3.117 (0.010) & 1.037 (0.002) \\
+ & BIC-like & -0.393 (0.011) & 2.770 (0.011) & 2.770 (0.011) & 1.051 (0.002) \\
+ & CV & 0.015 (0.010) & 3.177 (0.010) & 3.177 (0.010) & 1.037 (0.002) \\
+Gaussian independent, $n=2000$ & PanIC-CF & -0.013 (0.005) & 3.149 (0.005) & 3.149 (0.005) & 1.010 (0.001) \\
+ & BIC-like & -0.233 (0.005) & 2.930 (0.005) & 2.930 (0.005) & 1.014 (0.001) \\
+ & CV & 0.009 (0.005) & 3.171 (0.005) & 3.171 (0.005) & 1.010 (0.001) \\
+Logistic independent, $n=500$ & PanIC-CF & -0.134 (0.025) & 3.028 (0.025) & 3.028 (0.025) & 1.235 (0.001) \\
+ & BIC-active (exploratory) & -1.346 (0.043) & 1.816 (0.043) & 1.816 (0.043) & 1.268 (0.002) \\
+ & CV & -0.179 (0.024) & 2.984 (0.024) & 2.984 (0.024) & 1.235 (0.001) \\
+Logistic independent, $n=2000$ & PanIC-CF & -0.031 (0.012) & 3.131 (0.012) & 3.131 (0.012) & 1.207 (0.001) \\
+ & BIC-active (exploratory) & -0.592 (0.014) & 2.570 (0.014) & 2.570 (0.014) & 1.212 (0.001) \\
+ & CV & -0.038 (0.012) & 3.125 (0.012) & 3.125 (0.012) & 1.207 (0.001) \\
+Gaussian AR(1), $n=1000$ & PanIC-CF & -0.036 (0.008) & 3.941 (0.008) & 3.941 (0.008) & 1.016 (0.001) \\
+ & BIC-like & -0.370 (0.010) & 3.608 (0.010) & 3.608 (0.010) & 1.024 (0.001) \\
+ & CV & 0.013 (0.009) & 3.990 (0.009) & 3.990 (0.009) & 1.016 (0.001) \\
+Logistic AR(1), $n=1000$ & PanIC-CF & -0.059 (0.021) & 3.919 (0.021) & 3.919 (0.021) & 1.218 (0.001) \\
+ & BIC-active (exploratory) & -0.964 (0.023) & 3.013 (0.023) & 3.013 (0.023) & 1.225 (0.001) \\
+ & CV & -0.070 (0.021) & 3.908 (0.021) & 3.908 (0.021) & 1.218 (0.001) \\
+Poisson independent, $n=1000$ & PanIC-CF & -0.007 (0.005) & 3.156 (0.005) & 3.156 (0.005) & 1.073 (0.001) \\
+ & BIC-active (exploratory) & -0.206 (0.006) & 2.957 (0.006) & 2.957 (0.006) & 1.081 (0.001) \\
+ & CV & 0.014 (0.005) & 3.176 (0.005) & 3.176 (0.005) & 1.073 (0.001) \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}

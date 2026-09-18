@@ -1,0 +1,23 @@
+\begin{table}[H]
+\centering
+\caption{Grid sensitivity for the revised PanIC-CF procedure in the independent Gaussian setting with $n=1000$ and common random numbers across $N=500$ replications. Every grid spans $[0,20]$. Entries are means with Monte Carlo standard errors in parentheses. Runtime is the shared end-to-end time for the full-sample path, ten half-sample calibration directions, and five ordinary CV folds.}
+\label{Table: grid sensitivity}
+\begin{adjustbox}{width=\textwidth}
+\scriptsize
+\begin{tabular}{rrlrrrrr}
+\hline
+$m$ & Spacing & Method & Total support error & Exact & Test deviance & Selected radius & Runtime (s) \\
+\hline
+61 & 0.333 & PanIC-CF & 6.58 (0.10) & 0.004 (0.003) & 1.018 (0.001) & 3.150 (0.008) & 0.071 (0.000) \\
+61 & 0.333 & BIC-like & 2.66 (0.08) & 0.106 (0.014) & 1.026 (0.002) & 2.855 (0.008) & 0.071 (0.000) \\
+61 & 0.333 & CV & 6.72 (0.10) & 0.004 (0.003) & 1.018 (0.001) & 3.165 (0.008) & 0.071 (0.000) \\
+121 & 0.167 & PanIC-CF & 6.31 (0.09) & 0.002 (0.002) & 1.018 (0.001) & 3.130 (0.007) & 0.095 (0.001) \\
+121 & 0.167 & BIC-like & 2.32 (0.07) & 0.130 (0.015) & 1.026 (0.001) & 2.857 (0.008) & 0.095 (0.001) \\
+121 & 0.167 & CV & 6.76 (0.09) & 0.002 (0.002) & 1.018 (0.001) & 3.162 (0.007) & 0.095 (0.001) \\
+241 & 0.083 & PanIC-CF & 6.26 (0.09) & 0.000 (0.000) & 1.017 (0.001) & 3.124 (0.006) & 0.146 (0.001) \\
+241 & 0.083 & BIC-like & 2.07 (0.07) & 0.158 (0.016) & 1.026 (0.001) & 2.855 (0.007) & 0.146 (0.001) \\
+241 & 0.083 & CV & 6.69 (0.09) & 0.000 (0.000) & 1.018 (0.001) & 3.163 (0.007) & 0.146 (0.001) \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}

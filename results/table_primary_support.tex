@@ -1,0 +1,35 @@
+\begin{table}[H]
+\centering
+\caption{Support recovery for the revised repeated-half-split PanIC-CF procedure and the prespecified comparators. Entries are Monte Carlo means with Monte Carlo standard errors in parentheses over 500 attempted replications. FPR and FNR use the ten inactive and ten active slopes, respectively; a slope is selected when $\lvert\widehat\beta_j\rvert>10^{-8}$.}
+\label{Table: revised primary support}
+\begin{adjustbox}{width=\textwidth}
+\scriptsize
+\begin{tabular}{llrrrrrr}
+\hline
+Setting & Method & FP & FN & FPR & FNR & Exact & Total support error \\
+\hline
+Gaussian independent, $n=500$ & PanIC-CF & 6.24 (0.09) & 0.00 (0.00) & 0.624 (0.009) & 0.000 (0.000) & 0.002 (0.002) & 6.24 (0.09) \\
+ & BIC-like & 2.52 (0.08) & 0.00 (0.00) & 0.252 (0.008) & 0.000 (0.000) & 0.116 (0.014) & 2.52 (0.08) \\
+ & CV & 6.71 (0.09) & 0.00 (0.00) & 0.671 (0.009) & 0.000 (0.000) & 0.000 (0.000) & 6.71 (0.09) \\
+Gaussian independent, $n=2000$ & PanIC-CF & 6.31 (0.10) & 0.00 (0.00) & 0.631 (0.010) & 0.000 (0.000) & 0.002 (0.002) & 6.31 (0.10) \\
+ & BIC-like & 2.14 (0.07) & 0.00 (0.00) & 0.214 (0.007) & 0.000 (0.000) & 0.148 (0.016) & 2.14 (0.07) \\
+ & CV & 6.74 (0.09) & 0.00 (0.00) & 0.674 (0.009) & 0.000 (0.000) & 0.000 (0.000) & 6.74 (0.09) \\
+Logistic independent, $n=500$ & PanIC-CF & 6.30 (0.09) & 0.04 (0.01) & 0.630 (0.009) & 0.004 (0.001) & 0.000 (0.000) & 6.34 (0.09) \\
+ & BIC-active (exploratory) & 1.66 (0.07) & 1.83 (0.15) & 0.166 (0.007) & 0.183 (0.015) & 0.058 (0.010) & 3.49 (0.13) \\
+ & CV & 6.11 (0.09) & 0.05 (0.01) & 0.611 (0.009) & 0.005 (0.001) & 0.000 (0.000) & 6.15 (0.09) \\
+Logistic independent, $n=2000$ & PanIC-CF & 6.93 (0.08) & 0.00 (0.00) & 0.693 (0.008) & 0.000 (0.000) & 0.000 (0.000) & 6.93 (0.08) \\
+ & BIC-active (exploratory) & 2.34 (0.07) & 0.00 (0.00) & 0.234 (0.007) & 0.000 (0.000) & 0.112 (0.014) & 2.34 (0.07) \\
+ & CV & 6.84 (0.09) & 0.00 (0.00) & 0.684 (0.009) & 0.000 (0.000) & 0.000 (0.000) & 6.84 (0.09) \\
+Gaussian AR(1), $n=1000$ & PanIC-CF & 6.14 (0.09) & 0.00 (0.00) & 0.614 (0.009) & 0.000 (0.000) & 0.002 (0.002) & 6.14 (0.09) \\
+ & BIC-like & 2.29 (0.07) & 0.00 (0.00) & 0.229 (0.007) & 0.000 (0.000) & 0.128 (0.015) & 2.29 (0.07) \\
+ & CV & 6.57 (0.10) & 0.00 (0.00) & 0.657 (0.010) & 0.000 (0.000) & 0.002 (0.002) & 6.57 (0.10) \\
+Logistic AR(1), $n=1000$ & PanIC-CF & 6.71 (0.09) & 0.00 (0.00) & 0.671 (0.009) & 0.000 (0.000) & 0.002 (0.002) & 6.71 (0.09) \\
+ & BIC-active (exploratory) & 2.31 (0.07) & 0.00 (0.00) & 0.231 (0.007) & 0.000 (0.000) & 0.108 (0.014) & 2.31 (0.07) \\
+ & CV & 6.66 (0.09) & 0.00 (0.00) & 0.666 (0.009) & 0.000 (0.000) & 0.000 (0.000) & 6.66 (0.09) \\
+Poisson independent, $n=1000$ & PanIC-CF & 6.44 (0.09) & 0.00 (0.00) & 0.644 (0.009) & 0.000 (0.000) & 0.002 (0.002) & 6.44 (0.09) \\
+ & BIC-active (exploratory) & 2.74 (0.08) & 0.00 (0.00) & 0.274 (0.008) & 0.000 (0.000) & 0.102 (0.014) & 2.74 (0.08) \\
+ & CV & 6.80 (0.09) & 0.00 (0.00) & 0.680 (0.009) & 0.000 (0.000) & 0.002 (0.002) & 6.80 (0.09) \\
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}

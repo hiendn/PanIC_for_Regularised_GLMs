@@ -1,0 +1,8 @@
+"item","value"
+"sensitivity_master_seed","2036091802"
+"confirmatory_master_seed","2026091802"
+"scenario_seed_index","1"
+"replications","500"
+"workers","4"
+"radius_points","61;121;241"
+"radius_interval","[0,20]"
