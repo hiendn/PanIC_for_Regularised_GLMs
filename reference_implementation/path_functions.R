@@ -36,6 +36,7 @@ scenario_truth <- function(family, rho, config = CONFIG) {
     true_radius = sum(abs(beta))
   )
 }
+
 generate_dataset <- function(n, family, truth, seed, config = CONFIG) {
   set.seed(seed)
   z <- matrix(rnorm(n * config$d), nrow = n, ncol = config$d)
@@ -349,3 +350,4 @@ failed_method_row <- function(method) {
     stringsAsFactors = FALSE
   )
 }
+

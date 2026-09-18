@@ -1,0 +1,122 @@
+PanIC-CF confirmatory method lock
+=================================
+
+Lock status
+-----------
+
+The statistical method, estimands, margins, and decision rules were fixed
+before any simulation outcome was inspected.  A one-time seed-only re-lock,
+documented below, reserves previously untouched streams for the final
+1,000-replication main and 500-replication grid studies. The frozen numerical
+engine from the preceding release is vendored under
+`reference_implementation/` so that a fresh checkout is self-contained.
+
+Authorized method amendment
+---------------------------
+
+The primary PanIC-CF procedure differs from the preceding release only in the
+asymmetric undershoot weight:
+
+    omega(n_V) = sqrt(log(log(n_V + exp(exp(1))))).
+
+Five independently seeded balanced half-splits, two directions per split, the
+cross-signed target, projection interval, radius grid, multiplier grid,
+largest-multiplier one-standard-error rule, failure default, solver controls,
+and full-data selection rule are unchanged.
+
+`PanIC-CF-original` evaluates the preceding log-log weight on the identical
+candidate paths, pilots, targets, and test sample.  It is a labelled
+sensitivity analysis and adds no fitting.  `CV-min` is the preceding ordinary
+minimum-validation-loss five-fold comparator.  `CV-1SE` is secondary: from
+the same five fold-loss curves it selects the smallest radius whose mean loss
+is at most the CV-min mean plus the fold-level standard error at CV-min,
+where SE is the standard deviation of the five fold means divided by sqrt(5).
+
+Confirmatory design and decision
+--------------------------------
+
+The final main master seed is 2066091802 and there are 1,000 replications in each of
+the seven unchanged scenarios.  The primary support effect is the equal-weight
+mean across those scenarios of the paired difference
+
+    (FP + FN)_PanIC-CF - (FP + FN)_CV-min.
+
+Support superiority passes when its one-sided 95% upper normal Monte Carlo
+bound is below zero.  The prediction guardrail is the equal-weight mean of
+
+    (D_PanIC-CF - D_CV-min) / D_CV-min.
+
+Prediction noninferiority passes when its one-sided 95% upper normal Monte
+Carlo bound is below the fixed margin 0.001 (0.1%).  A joint claim requires
+complete pairing and both decisions to pass.  Margins 0.0005, 0.0025, and
+0.005 are sensitivity analyses only and cannot change the primary decision.
+Scenario-specific results, PanIC-CF-original, and CV-1SE are secondary.
+
+The final v2 grid-sensitivity master seed is 2086091802, with 500 common-
+random-number replications at 61, 121, and 241 radius points.  Dedicated smoke
+mode uses main and grid seeds 2106091802 and 2126091802.  Exact enumeration of
+all training, five calibration-split, CV-fold, and test seeds verifies that
+all four final production/smoke families are pairwise disjoint and disjoint
+from conservative 1,000-replication, seven-scenario supersets for prior or
+retired master seeds 2026091801, 2026091802, 2036091802, 2046091802,
+2056091802, and 2076091802.  It also verifies that every seed remains in R's
+positive integer range.  These checks are part of
+`Implementation_Validation.R` and must pass before either runner starts.
+
+Pre-run validation amendment
+----------------------------
+
+The first deterministic audit found that three exact-equivalence checks
+compared inherited data-frame row names in addition to the scientific fields.
+The check was corrected to normalize row names before exact field comparison.
+All displayed values and every substantive field already agreed; no method,
+seed, estimand, decision rule, or simulation setting was changed.  This
+amendment occurred before any production simulation was started.
+
+The all-setting smoke pipeline then exposed a packaging-only issue: its table
+caption and pairing-completeness flag used the locked production count rather
+than the run-specific count recorded in `configuration.csv`.  Output analysis
+was changed to read that recorded count.  This changes no production value
+(both counts are 1,000 in the locked run), and no method or decision rule.
+The independent verifier received the corresponding run-count correction so
+that non-production smoke archives are assessed against their own recorded
+replication count; the locked production check remains 1,000.
+
+That smoke run had consumed replications 1--2 of the then-candidate main seed
+2056091802, and the grid smoke used 2076091802.  No statistical setting was
+changed in response.  Nevertheless, to make the final seeds literally
+uninspected, a one-time seed-only re-lock retired both seeds, added them to the
+exclusion audit, and fixed 2066091802 and 2086091802 for production.  The
+runners now reject every reduced-replication use of a production seed and
+substitute 2106091802 and 2126091802 only when `--smoke` is explicit.  The
+partial old candidate output directory contained only configuration, registry,
+and lock files; no scenario completed there. The full audit trail is described
+in `PROVENANCE.md`.
+
+The manuscript-facing output layer maps the internal method identifier
+`BIC-active (exploratory)` to the reader-facing label `BIC-like`.  Its primary
+table caption states that the logistic and Poisson rows are exploratory
+active-count analogues outside the Gaussian proposition.  Internal process
+phrases such as “second-confirmation” and “revised PanIC-CF” were removed from
+reader-facing captions.  Internal identifiers and statistical calculations
+are unchanged, and the independent verifiers enforce these presentation
+requirements.
+
+Locked critical sources
+-----------------------
+
+537d3cd266dd880453d194de9c03a7cbbbcdbaa7352f0b197886818d0dd97a5e  reference_implementation/config.R
+9128cd0112cd3c679fef5d5601c22a4232293e2c38a9dae7e7caa6d2f3762c68  reference_implementation/path_functions.R
+5df27ca79d5da1e7440b6c7b23874bdbdf62772fd02680fe9822136be8ffe568  reference_implementation/revised_cf_functions.R
+d485eaff44af6ea7359e8deda02db456ea08c160d4c661695b66312bea316d96  Simulation_Config.R
+073527683e2c1a6c143b71ea0253b1831cc870fba3e5da507bc600ebaf4775d7  PanIC_CF_Functions.R
+3ab67344c6e89c24fcc04d47d2adc1439c3a685cb9048d87052709759564583f  Method_Lock_Verification.R
+2237446bbe7b962a1219e8fbc0cbd281592bbb34e013fadda2fedb8484febe4f  Implementation_Validation.R
+f40bc8a24679024fbc80b341939c1aa52176741be4ec38177683b04f5e32095c  Run_Confirmatory_Simulations.R
+eb26ad02e1ca8c9f295142483b2c259ea723ba7048b3a76cf3b4e2e206f5e349  Simulation_Results_Analysis.R
+a514cc10a5073d386cfeaff9a2f80ef317d8730305987dee97c3841f35e0b0a6  Results_Verification.R
+497a23c8d94facc237eb8fb124362c6c317a1175d47b184d4863a1e52729ac19  Grid_Sensitivity_Study.R
+56952132b30c1ca96d297afd3d7c56254447ae0cdb80464a3e0e5f7f4e6e9243  Grid_Results_Verification.R
+4254a8908dca3e1294a2edb7f82c1dc2c2bfcb01b1ae982ac671bccb3a392ba3  Simulation_Study.R
+787060f62b07b0b9d3b70c990fee1f9a5ddec464fe937e9ec36988aa25a23cec  Grid_Sensitivity_Pipeline.R
+2fdd5eefbf3b2ea8ddc81f0a859ba95a87451a6b33efc29dd0073a91df165fd2  Repository_Verification.R

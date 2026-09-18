@@ -15,7 +15,7 @@ if (!exists("results_dir", inherits = FALSE)) {
   results_dir <- if (grepl("^/", output_name)) output_name else
     file.path(production_dir, output_name)
 }
-generated_dir <- results_dir
+generated_dir <- file.path(results_dir, "manuscript_generated")
 dir.create(generated_dir, recursive = TRUE, showWarnings = FALSE)
 runtime <- read.csv(file.path(results_dir, "runtime_raw.csv"),
                     stringsAsFactors = FALSE)
@@ -39,8 +39,7 @@ for (family in families) {
     subset$elapsed_seconds[subset$method == method]
   })
   method_labels <- c(
-    "PanIC-CF", "5-fold CV",
-    if (family == "gaussian") "BIC-like" else "Active count\n(exploratory)"
+    "PanIC-CF", "Shared\n5-fold CV", "BIC-like"
   )
   boxplot(
     split_values, names = method_labels,

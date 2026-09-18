@@ -5,7 +5,7 @@ script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 script_path <- if (length(script_arg)) {
   normalizePath(sub("^--file=", "", script_arg[[1L]]))
 } else {
-  normalizePath("Simulation_Study.R")
+  normalizePath("Grid_Sensitivity_Pipeline.R")
 }
 candidate_dir <- dirname(script_path)
 
@@ -19,6 +19,5 @@ run <- function(script, extra = character()) {
 
 output_arg <- args[grepl("^--output-dir=", args)]
 run("Implementation_Validation.R")
-run("Run_Confirmatory_Simulations.R", args)
-run("Simulation_Results_Analysis.R", output_arg)
-run("Results_Verification.R", output_arg)
+run("Grid_Sensitivity_Study.R", args)
+run("Grid_Results_Verification.R", output_arg)

@@ -1,0 +1,4 @@
+# Preserve byte-exact archived source and environment records. Their original
+# whitespace is covered by the committed SHA-256 manifests.
+reference_implementation/path_functions.R whitespace=-blank-at-eof
+results/sessionInfo.txt whitespace=-trailing-space

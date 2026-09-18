@@ -1,6 +1,6 @@
 \begin{table}[H]
 \centering
-\caption{Selected and attained constraint radii and independent-test performance. Entries are Monte Carlo means with Monte Carlo standard errors in parentheses over 500 attempted replications. Test deviance is evaluated on an independent sample of size 2,000. Signed radius error is $\lVert\widehat\beta\rVert_1-C^\star$.}
+\caption{Selected and attained constraint radii and independent-test performance. Entries are Monte Carlo means with Monte Carlo standard errors in parentheses over 1,000 attempted replications. Test deviance is evaluated on an independent sample of size 2,000. Signed radius error is $\lVert\widehat\beta\rVert_1-C^\star$. PanIC-CF-original is a same-path sensitivity analysis, and CV-1SE is a secondary trade-off comparator. The active-count comparator is labelled BIC-like in every family for compactness, but its logistic and Poisson rows are exploratory analogues outside the scope of Proposition \ref{Prop: BIC-like consistency}.}
 \label{Table: revised primary performance}
 \begin{adjustbox}{width=\textwidth}
 \scriptsize
@@ -8,27 +8,41 @@
 \hline
 Setting & Method & Signed radius error & $C_{\rm sel}$ & $\lVert\widehat\beta\rVert_1$ & Test deviance \\
 \hline
-Gaussian independent, $n=500$ & PanIC-CF & -0.045 (0.010) & 3.117 (0.010) & 3.117 (0.010) & 1.037 (0.002) \\
- & BIC-like & -0.393 (0.011) & 2.770 (0.011) & 2.770 (0.011) & 1.051 (0.002) \\
- & CV & 0.015 (0.010) & 3.177 (0.010) & 3.177 (0.010) & 1.037 (0.002) \\
-Gaussian independent, $n=2000$ & PanIC-CF & -0.013 (0.005) & 3.149 (0.005) & 3.149 (0.005) & 1.010 (0.001) \\
- & BIC-like & -0.233 (0.005) & 2.930 (0.005) & 2.930 (0.005) & 1.014 (0.001) \\
- & CV & 0.009 (0.005) & 3.171 (0.005) & 3.171 (0.005) & 1.010 (0.001) \\
-Logistic independent, $n=500$ & PanIC-CF & -0.134 (0.025) & 3.028 (0.025) & 3.028 (0.025) & 1.235 (0.001) \\
- & BIC-active (exploratory) & -1.346 (0.043) & 1.816 (0.043) & 1.816 (0.043) & 1.268 (0.002) \\
- & CV & -0.179 (0.024) & 2.984 (0.024) & 2.984 (0.024) & 1.235 (0.001) \\
-Logistic independent, $n=2000$ & PanIC-CF & -0.031 (0.012) & 3.131 (0.012) & 3.131 (0.012) & 1.207 (0.001) \\
- & BIC-active (exploratory) & -0.592 (0.014) & 2.570 (0.014) & 2.570 (0.014) & 1.212 (0.001) \\
- & CV & -0.038 (0.012) & 3.125 (0.012) & 3.125 (0.012) & 1.207 (0.001) \\
-Gaussian AR(1), $n=1000$ & PanIC-CF & -0.036 (0.008) & 3.941 (0.008) & 3.941 (0.008) & 1.016 (0.001) \\
- & BIC-like & -0.370 (0.010) & 3.608 (0.010) & 3.608 (0.010) & 1.024 (0.001) \\
- & CV & 0.013 (0.009) & 3.990 (0.009) & 3.990 (0.009) & 1.016 (0.001) \\
-Logistic AR(1), $n=1000$ & PanIC-CF & -0.059 (0.021) & 3.919 (0.021) & 3.919 (0.021) & 1.218 (0.001) \\
- & BIC-active (exploratory) & -0.964 (0.023) & 3.013 (0.023) & 3.013 (0.023) & 1.225 (0.001) \\
- & CV & -0.070 (0.021) & 3.908 (0.021) & 3.908 (0.021) & 1.218 (0.001) \\
-Poisson independent, $n=1000$ & PanIC-CF & -0.007 (0.005) & 3.156 (0.005) & 3.156 (0.005) & 1.073 (0.001) \\
- & BIC-active (exploratory) & -0.206 (0.006) & 2.957 (0.006) & 2.957 (0.006) & 1.081 (0.001) \\
- & CV & 0.014 (0.005) & 3.176 (0.005) & 3.176 (0.005) & 1.073 (0.001) \\
+Gaussian independent, $n=500$ & PanIC-CF & -0.071 (0.007) & 3.091 (0.007) & 3.091 (0.007) & 1.0364 (0.0011) \\
+ & PanIC-CF-original & -0.042 (0.007) & 3.120 (0.007) & 3.120 (0.007) & 1.0362 (0.0011) \\
+ & BIC-like & -0.364 (0.008) & 2.799 (0.008) & 2.799 (0.008) & 1.0482 (0.0012) \\
+ & CV-min & 0.016 (0.007) & 3.179 (0.007) & 3.179 (0.007) & 1.0362 (0.0011) \\
+ & CV-1SE & -0.750 (0.007) & 2.412 (0.007) & 2.412 (0.007) & 1.0864 (0.0015) \\
+Gaussian independent, $n=2000$ & PanIC-CF & -0.027 (0.004) & 3.135 (0.004) & 3.135 (0.004) & 1.0086 (0.0010) \\
+ & PanIC-CF-original & -0.010 (0.004) & 3.152 (0.004) & 3.152 (0.004) & 1.0086 (0.0010) \\
+ & BIC-like & -0.233 (0.004) & 2.930 (0.004) & 2.930 (0.004) & 1.0132 (0.0010) \\
+ & CV-min & 0.003 (0.004) & 3.165 (0.004) & 3.165 (0.004) & 1.0085 (0.0010) \\
+ & CV-1SE & -0.490 (0.004) & 2.672 (0.004) & 2.672 (0.004) & 1.0307 (0.0011) \\
+Logistic independent, $n=500$ & PanIC-CF & -0.189 (0.018) & 2.973 (0.018) & 2.973 (0.018) & 1.2363 (0.0007) \\
+ & PanIC-CF-original & -0.114 (0.018) & 3.048 (0.018) & 3.048 (0.018) & 1.2362 (0.0007) \\
+ & BIC-like & -1.247 (0.030) & 1.915 (0.030) & 1.915 (0.030) & 1.2647 (0.0016) \\
+ & CV-min & -0.129 (0.017) & 3.034 (0.017) & 3.034 (0.017) & 1.2359 (0.0007) \\
+ & CV-1SE & -1.548 (0.014) & 1.614 (0.014) & 1.614 (0.014) & 1.2647 (0.0008) \\
+Logistic independent, $n=2000$ & PanIC-CF & -0.052 (0.008) & 3.111 (0.008) & 3.111 (0.008) & 1.2089 (0.0005) \\
+ & PanIC-CF-original & -0.008 (0.008) & 3.155 (0.008) & 3.155 (0.008) & 1.2089 (0.0005) \\
+ & BIC-like & -0.570 (0.010) & 2.593 (0.010) & 2.593 (0.010) & 1.2129 (0.0005) \\
+ & CV-min & -0.007 (0.008) & 3.155 (0.008) & 3.155 (0.008) & 1.2090 (0.0005) \\
+ & CV-1SE & -0.972 (0.008) & 2.190 (0.008) & 2.190 (0.008) & 1.2212 (0.0004) \\
+Gaussian AR(1), $n=1000$ & PanIC-CF & -0.067 (0.006) & 3.911 (0.006) & 3.911 (0.006) & 1.0200 (0.0011) \\
+ & PanIC-CF-original & -0.036 (0.006) & 3.941 (0.006) & 3.941 (0.006) & 1.0198 (0.0011) \\
+ & BIC-like & -0.363 (0.007) & 3.615 (0.007) & 3.615 (0.007) & 1.0268 (0.0011) \\
+ & CV-min & 0.002 (0.006) & 3.979 (0.006) & 3.979 (0.006) & 1.0197 (0.0011) \\
+ & CV-1SE & -0.795 (0.007) & 3.183 (0.007) & 3.183 (0.007) & 1.0554 (0.0013) \\
+Logistic AR(1), $n=1000$ & PanIC-CF & -0.096 (0.015) & 3.882 (0.015) & 3.882 (0.015) & 1.2176 (0.0006) \\
+ & PanIC-CF-original & -0.030 (0.015) & 3.948 (0.015) & 3.948 (0.015) & 1.2176 (0.0006) \\
+ & BIC-like & -0.902 (0.017) & 3.075 (0.017) & 3.075 (0.017) & 1.2241 (0.0006) \\
+ & CV-min & -0.045 (0.015) & 3.933 (0.015) & 3.933 (0.015) & 1.2176 (0.0006) \\
+ & CV-1SE & -1.546 (0.012) & 2.432 (0.012) & 2.432 (0.012) & 1.2368 (0.0006) \\
+Poisson independent, $n=1000$ & PanIC-CF & -0.027 (0.004) & 3.135 (0.004) & 3.135 (0.004) & 1.0756 (0.0010) \\
+ & PanIC-CF-original & -0.015 (0.004) & 3.147 (0.004) & 3.147 (0.004) & 1.0755 (0.0010) \\
+ & BIC-like & -0.215 (0.004) & 2.947 (0.004) & 2.947 (0.004) & 1.0843 (0.0010) \\
+ & CV-min & 0.007 (0.004) & 3.169 (0.004) & 3.169 (0.004) & 1.0756 (0.0010) \\
+ & CV-1SE & -1.147 (0.007) & 2.015 (0.007) & 2.015 (0.007) & 1.3491 (0.0038) \\
 \hline
 \end{tabular}
 \end{adjustbox}

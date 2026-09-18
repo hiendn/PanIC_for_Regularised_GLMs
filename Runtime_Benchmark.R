@@ -9,14 +9,17 @@ arg_value <- function(prefix, default = NULL) {
 script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 script_path <- if (length(script_arg)) {
   normalizePath(sub("^--file=", "", script_arg[[1L]]))
-} else normalizePath("Runtime_Benchmark.R")
+} else normalizePath("benchmark_runtime.R")
 production_dir <- dirname(script_path)
-source(file.path(production_dir, "Simulation_Config.R"))
-source(file.path(production_dir, "PanIC_CF_Functions.R"))
+.libPaths(c(file.path(production_dir, "Rlib"), .libPaths()))
+source(file.path(production_dir, "reference_implementation", "config.R"))
+source(file.path(
+  production_dir, "reference_implementation", "revised_cf_functions.R"
+))
 output_name <- arg_value("--output-dir", "results")
 results_dir <- if (grepl("^/", output_name)) output_name else
   file.path(production_dir, output_name)
-generated_dir <- results_dir
+generated_dir <- file.path(results_dir, "manuscript_generated")
 dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(generated_dir, recursive = TRUE, showWarnings = FALSE)
 

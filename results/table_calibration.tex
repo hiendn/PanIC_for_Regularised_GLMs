@@ -1,20 +1,20 @@
 \begin{table}[H]
 \centering
-\caption{Calibration targets, selected multipliers, and failure diagnostics for revised PanIC-CF. The ten raw cross-signed targets are averaged within each data-set replication before the across-replication mean and Monte Carlo standard error in parentheses are computed over $N=500$ replications. Raw bias is the mean target minus $C^\star$; multiplier entries are median [first quartile, third quartile]. Failure, prespecified-default, and projection columns are counts across replications or calibration rows, as applicable.}
+\caption{Calibration targets, selected multipliers, and failure diagnostics for PanIC-CF. The ten raw cross-signed targets are averaged within each data-set replication before the across-replication mean and Monte Carlo standard error in parentheses are computed over $N=1{,}000$ replications. Raw bias is the mean target minus $C^\star$; multiplier entries are median [first quartile, third quartile]. Calibration-failure and prespecified-default columns count replications, whereas projections count calibration rows.}
 \label{Table: revised calibration}
 \begin{adjustbox}{width=\textwidth}
 \scriptsize
 \begin{tabular}{lrrrlrrr}
 \hline
-Setting & $C^\star$ & Mean raw target & Raw bias & $\widehat\kappa$ [Q1,Q3] & Failures & Defaults & Projections \\
+Setting & $C^\star$ & Mean raw target & Raw bias & $\widehat\kappa$ [Q1,Q3] & Cal. failures & Defaults & Projections \\
 \hline
-Gaussian independent, $n=500$ & 3.162 & 3.169 (0.009) & 0.007 (0.009) & 8.577 [6.310, 8.577] & 0 & 0 & 0 \\
-Gaussian independent, $n=2000$ & 3.162 & 3.160 (0.004) & -0.002 (0.004) & 6.310 [4.642, 8.577] & 0 & 0 & 0 \\
-Logistic independent, $n=500$ & 3.162 & 3.363 (0.027) & 0.201 (0.027) & 1.848 [1.359, 1.848] & 0 & 0 & 0 \\
-Logistic independent, $n=2000$ & 3.162 & 3.224 (0.012) & 0.062 (0.012) & 1.359 [1.000, 1.359] & 0 & 0 & 0 \\
-Gaussian AR(1), $n=1000$ & 3.978 & 3.979 (0.008) & 0.002 (0.008) & 6.310 [4.642, 6.310] & 0 & 0 & 0 \\
-Logistic AR(1), $n=1000$ & 3.978 & 4.163 (0.021) & 0.185 (0.021) & 1.000 [1.000, 1.359] & 0 & 0 & 0 \\
-Poisson independent, $n=1000$ & 3.162 & 3.167 (0.005) & 0.005 (0.005) & 4.642 [3.415, 6.310] & 0 & 0 & 0 \\
+Gaussian independent, $n=500$ & 3.162 & 3.165 (0.006) & 0.003 (0.006) & 8.577 [6.310, 11.659] & 0 & 0 & 0 \\
+Gaussian independent, $n=2000$ & 3.162 & 3.160 (0.003) & -0.002 (0.003) & 6.310 [6.310, 8.577] & 0 & 0 & 0 \\
+Logistic independent, $n=500$ & 3.162 & 3.401 (0.019) & 0.238 (0.019) & 1.848 [1.359, 1.848] & 0 & 0 & 1 \\
+Logistic independent, $n=2000$ & 3.162 & 3.249 (0.008) & 0.087 (0.008) & 1.359 [1.359, 1.848] & 0 & 0 & 0 \\
+Gaussian AR(1), $n=1000$ & 3.978 & 3.975 (0.006) & -0.003 (0.006) & 6.310 [4.642, 8.577] & 0 & 0 & 0 \\
+Logistic AR(1), $n=1000$ & 3.978 & 4.179 (0.015) & 0.202 (0.015) & 1.359 [1.000, 1.359] & 0 & 0 & 0 \\
+Poisson independent, $n=1000$ & 3.162 & 3.159 (0.003) & -0.003 (0.003) & 4.642 [4.642, 6.310] & 0 & 0 & 0 \\
 \hline
 \end{tabular}
 \end{adjustbox}

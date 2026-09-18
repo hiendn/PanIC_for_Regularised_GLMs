@@ -1,22 +1,28 @@
 \begin{table}[H]
 \centering
-\caption{Grid sensitivity for the revised PanIC-CF procedure in the independent Gaussian setting with $n=1000$ and common random numbers across $N=500$ replications. Every grid spans $[0,20]$. Entries are means with Monte Carlo standard errors in parentheses. Runtime is the shared end-to-end time for the full-sample path, ten half-sample calibration directions, and five ordinary CV folds.}
+\caption{Radius-grid sensitivity in the independent Gaussian setting with $n=1000$ and common random numbers across $N=500$ replications. Every grid spans $[0,20]$. Entries are means with Monte Carlo standard errors in parentheses. PanIC-CF-original and PanIC-CF share fitted paths, as do CV-min and CV-1SE. Shared runtime is the end-to-end time for the full-sample path, ten half-sample calibration directions, and five ordinary CV folds.}
 \label{Table: grid sensitivity}
 \begin{adjustbox}{width=\textwidth}
 \scriptsize
 \begin{tabular}{rrlrrrrr}
 \hline
-$m$ & Spacing & Method & Total support error & Exact & Test deviance & Selected radius & Runtime (s) \\
+$m$ & Spacing & Method & Total support error & Exact & Test deviance & Selected radius & Shared runtime (s) \\
 \hline
-61 & 0.333 & PanIC-CF & 6.58 (0.10) & 0.004 (0.003) & 1.018 (0.001) & 3.150 (0.008) & 0.071 (0.000) \\
-61 & 0.333 & BIC-like & 2.66 (0.08) & 0.106 (0.014) & 1.026 (0.002) & 2.855 (0.008) & 0.071 (0.000) \\
-61 & 0.333 & CV & 6.72 (0.10) & 0.004 (0.003) & 1.018 (0.001) & 3.165 (0.008) & 0.071 (0.000) \\
-121 & 0.167 & PanIC-CF & 6.31 (0.09) & 0.002 (0.002) & 1.018 (0.001) & 3.130 (0.007) & 0.095 (0.001) \\
-121 & 0.167 & BIC-like & 2.32 (0.07) & 0.130 (0.015) & 1.026 (0.001) & 2.857 (0.008) & 0.095 (0.001) \\
-121 & 0.167 & CV & 6.76 (0.09) & 0.002 (0.002) & 1.018 (0.001) & 3.162 (0.007) & 0.095 (0.001) \\
-241 & 0.083 & PanIC-CF & 6.26 (0.09) & 0.000 (0.000) & 1.017 (0.001) & 3.124 (0.006) & 0.146 (0.001) \\
-241 & 0.083 & BIC-like & 2.07 (0.07) & 0.158 (0.016) & 1.026 (0.001) & 2.855 (0.007) & 0.146 (0.001) \\
-241 & 0.083 & CV & 6.69 (0.09) & 0.000 (0.000) & 1.018 (0.001) & 3.163 (0.007) & 0.146 (0.001) \\
+61 & 0.333 & PanIC-CF & 6.20 (0.11) & 0.008 (0.004) & 1.020 (0.002) & 3.132 (0.008) & 0.0674 (0.0004) \\
+61 & 0.333 & PanIC-CF-original & 6.45 (0.11) & 0.006 (0.003) & 1.020 (0.002) & 3.152 (0.008) & 0.0674 (0.0004) \\
+61 & 0.333 & BIC-like & 2.68 (0.08) & 0.124 (0.015) & 1.027 (0.002) & 2.866 (0.008) & 0.0674 (0.0004) \\
+61 & 0.333 & CV-min & 6.81 (0.10) & 0.006 (0.003) & 1.019 (0.002) & 3.183 (0.008) & 0.0674 (0.0004) \\
+61 & 0.333 & CV-1SE & 1.27 (0.06) & 0.372 (0.022) & 1.044 (0.002) & 2.642 (0.008) & 0.0674 (0.0004) \\
+121 & 0.167 & PanIC-CF & 6.06 (0.09) & 0.008 (0.004) & 1.019 (0.002) & 3.122 (0.007) & 0.0888 (0.0005) \\
+121 & 0.167 & PanIC-CF-original & 6.34 (0.09) & 0.004 (0.003) & 1.019 (0.002) & 3.145 (0.007) & 0.0888 (0.0005) \\
+121 & 0.167 & BIC-like & 2.41 (0.08) & 0.126 (0.015) & 1.027 (0.002) & 2.871 (0.008) & 0.0888 (0.0005) \\
+121 & 0.167 & CV-min & 6.74 (0.09) & 0.002 (0.002) & 1.019 (0.001) & 3.179 (0.007) & 0.0888 (0.0005) \\
+121 & 0.167 & CV-1SE & 0.87 (0.05) & 0.502 (0.022) & 1.052 (0.002) & 2.559 (0.008) & 0.0888 (0.0005) \\
+241 & 0.083 & PanIC-CF & 5.88 (0.09) & 0.006 (0.003) & 1.019 (0.002) & 3.110 (0.007) & 0.1310 (0.0007) \\
+241 & 0.083 & PanIC-CF-original & 6.17 (0.09) & 0.006 (0.003) & 1.019 (0.002) & 3.133 (0.007) & 0.1310 (0.0007) \\
+241 & 0.083 & BIC-like & 2.19 (0.07) & 0.144 (0.016) & 1.026 (0.002) & 2.874 (0.008) & 0.1310 (0.0007) \\
+241 & 0.083 & CV-min & 6.70 (0.09) & 0.002 (0.002) & 1.019 (0.001) & 3.180 (0.007) & 0.1310 (0.0007) \\
+241 & 0.083 & CV-1SE & 0.68 (0.04) & 0.574 (0.022) & 1.057 (0.002) & 2.518 (0.007) & 0.1310 (0.0007) \\
 \hline
 \end{tabular}
 \end{adjustbox}

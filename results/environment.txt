@@ -1,0 +1,9 @@
+R=R version 4.4.0 (2024-04-24)
+platform=aarch64-apple-darwin20
+glmnet=4.1.10
+seed_role=production
+master_seed=2066091802
+production_master_seed=2066091802
+method_lock_sha256=a7dcbff623c335d80a2a5dc710282d8fbd83c1f0b4ce3613e7f470fcd506db26
+overall_wall_elapsed_seconds=381.716000
+completed_at=2026-09-18 08:54:29 UTC
