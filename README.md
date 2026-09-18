@@ -70,6 +70,8 @@ Generated replication-level files, seed ledgers, timing records and checkpoints 
 
 ## Reference outputs
 
+The numerical implementation used for the retained reference outputs is identified by source commit [`7ab3f9b`](https://github.com/hiendn/PanIC_for_Regularised_GLMs/commit/7ab3f9b44486c8abbb45d3f847c8acbcbd2167ce).
+
 The reference run contains 3,500 confirmatory data sets and 35,000 calibration rows. It recorded no full-path, calibration or CV failure; no default use; no solver warning; no target projection; and no multiplier or selected-radius endpoint selection. All 14 deterministic implementation checks in `results/verification_checks.csv` passed.
 
 Relative to CV, the paired mean PanIC-CF total-support-error differences were `-0.472`, `-0.428`, `0.190`, `0.090`, `-0.426`, `0.050` and `-0.360` in the seven listed settings. PanIC-CF therefore reduced this support summary in the Gaussian and Poisson settings and had slightly higher error in the logistic settings. Every paired mean test-deviance difference had absolute value at most `1.13e-4` and was smaller than its own Monte Carlo standard error. This does not establish predictive equivalence; no systematic predictive difference was resolved at the achieved Monte Carlo precision.
