@@ -1,11 +1,9 @@
 ## Confirmatory PanIC-CF calibration and comparison functions.
 ##
-## This file sources the locked preceding implementation and replaces only the
-## undershoot weight and the replication driver.  The replacement driver is a
-## line-for-line structural continuation of the preceding driver, with the
-## ordinary minimum-error CV result relabelled CV-min and conventional CV-1SE
-## added from the same five fold-loss curves.  No extra model fitting is needed
-## for the secondary comparator.
+## This file sources the locked preceding implementation and replaces the
+## undershoot weight and replication driver.  The assessed methods are
+## PanIC-CF, ordinary minimum-loss five-fold CV, and a family-appropriate
+## BIC-like comparator.
 
 candidate_source_dir <- local({
   candidates <- vapply(sys.frames(), function(frame) {
@@ -35,13 +33,54 @@ calibration_weight <- function(n_validation, config = CONFIG) {
   base_weight^config$calibration_weight_power
 }
 
-original_calibration_weight <- function(n_validation) {
-  n_validation <- as.numeric(n_validation)
-  if (length(n_validation) != 1L || !is.finite(n_validation) ||
-      n_validation <= 0) {
-    stop("n_validation must be one positive finite value")
-  }
-  log(log(n_validation + exp(exp(1))))
+## glmnet returns exact zeros for inactive coefficients.  Interpolated path
+## points are classified by their literal fitted coefficient values, without
+## a post hoc numerical threshold.
+support_metrics <- function(beta_hat, truth) {
+  selected <- beta_hat != 0
+  fp <- sum(selected & !truth$support)
+  fn <- sum(!selected & truth$support)
+  list(
+    fp = fp,
+    fn = fn,
+    fpr = fp / sum(!truth$support),
+    fnr = fn / sum(truth$support),
+    exact = as.integer(fp == 0L && fn == 0L),
+    wrong = fp + fn,
+    norm_error = sum(abs(beta_hat)) - truth$true_radius
+  )
+}
+
+evaluate_revised_index <- function(path, index, method, truth, test, family,
+                                   kappa = NA_real_,
+                                   calibration_failed = FALSE,
+                                   default_used = FALSE,
+                                   config = CONFIG) {
+  beta_hat <- path$beta[, index]
+  beta0_hat <- path$beta0[index]
+  support <- support_metrics(beta_hat, truth)
+  eta_test <- drop(beta0_hat + test$x %*% beta_hat)
+  data.frame(
+    method = method,
+    fp = support$fp,
+    fn = support$fn,
+    fpr = support$fpr,
+    fnr = support$fnr,
+    exact = support$exact,
+    wrong = support$wrong,
+    signed_attained_radius_error = support$norm_error,
+    test_deviance = mean_deviance(family, test$y, eta_test),
+    selected_grid_radius = path$grid_radius[index],
+    attained_radius = path$attained_radius[index],
+    selected_lower_endpoint = as.integer(index == 1L),
+    selected_upper_endpoint = as.integer(index == length(path$grid_radius)),
+    kappa = kappa,
+    method_failed = 0L,
+    failure_reason = "",
+    calibration_failed = as.integer(calibration_failed),
+    default_used = as.integer(default_used),
+    stringsAsFactors = FALSE
+  )
 }
 
 calibration_failure_rows <- function(common, split_seeds, n) {
@@ -60,7 +99,7 @@ calibration_failure_rows <- function(common, split_seeds, n) {
           projected_cross_signed_radius = NA_real_,
           projected_below_grid = NA_integer_,
           projected_above_grid = NA_integer_, projection_applied = NA_integer_,
-          weight = NA_real_, original_weight = NA_real_,
+          weight = NA_real_,
           training_path_warning_count = NA_integer_,
           training_pilot_warning_count = NA_integer_,
           validation_pilot_warning_count = NA_integer_,
@@ -76,7 +115,7 @@ calibration_failure_rows <- function(common, split_seeds, n) {
   do.call(rbind, rows)
 }
 
-select_cv_min_and_one_se <- function(validation_loss, radii) {
+select_cv <- function(validation_loss, radii) {
   if (!is.matrix(validation_loss) || ncol(validation_loss) != length(radii)) {
     stop("CV loss matrix and radius grid are incompatible")
   }
@@ -87,21 +126,11 @@ select_cv_min_and_one_se <- function(validation_loss, radii) {
     stop("The radius grid must be strictly increasing")
   }
   mean_loss_by_radius <- colMeans(validation_loss)
-  se_loss_by_radius <- apply(validation_loss, 2L, sd) /
-    sqrt(nrow(validation_loss))
-  min_index <- smallest_minimiser(mean_loss_by_radius)
-  threshold <- mean_loss_by_radius[min_index] + se_loss_by_radius[min_index]
-  eligible <- which(mean_loss_by_radius <= threshold + 1e-14)
-  one_se_index <- min(eligible)
+  selected_index <- smallest_minimiser(mean_loss_by_radius)
   list(
-    min_index = min_index,
-    one_se_index = one_se_index,
-    mean_at_min = mean_loss_by_radius[min_index],
-    se_at_min = se_loss_by_radius[min_index],
-    threshold = threshold,
-    eligible_count = length(eligible),
-    mean_loss = mean_loss_by_radius,
-    se_loss = se_loss_by_radius
+    index = selected_index,
+    mean_at_selected = mean_loss_by_radius[selected_index],
+    mean_loss = mean_loss_by_radius
   )
 }
 
@@ -114,20 +143,12 @@ unexpected_candidate_error_result <- function(scenario, scenario_index,
   )
   common <- make_common_row(scenario, replication_index, streams, truth)
   family <- scenario$family[[1L]]
-  bic_label <- if (family == "gaussian") {
-    "BIC-like"
-  } else {
-    "BIC-active (exploratory)"
-  }
+  bic_label <- "BIC-like"
   reason <- paste0("unexpected error: ", message)
   primary <- rbind(
     empty_evaluation_row("PanIC-CF", TRUE, reason, TRUE, FALSE),
-    empty_evaluation_row(
-      config$original_sensitivity_method, TRUE, reason, TRUE, FALSE
-    ),
     empty_evaluation_row(bic_label, TRUE, reason, FALSE, FALSE),
-    empty_evaluation_row(config$primary_cv_method, TRUE, reason, FALSE, FALSE),
-    empty_evaluation_row(config$secondary_cv_method, TRUE, reason, FALSE, FALSE)
+    empty_evaluation_row(config$primary_cv_method, TRUE, reason, FALSE, FALSE)
   )
   primary <- cbind(common[rep(1L, nrow(primary)), ], primary)
   calibration <- calibration_failure_rows(
@@ -147,15 +168,10 @@ unexpected_candidate_error_result <- function(scenario, scenario_index,
       raw_target_mean = NA_real_, raw_target_max = NA_real_,
       projected_target_mean = NA_real_, kappa_hat = NA_real_,
       kappa_lower_endpoint = NA_integer_, kappa_upper_endpoint = NA_integer_,
-      original_kappa_hat = NA_real_,
-      original_kappa_lower_endpoint = NA_integer_,
-      original_kappa_upper_endpoint = NA_integer_,
       default_used = 0L,
       calibration_mean_min = NA_real_, calibration_se_at_min = NA_real_,
       eligible_kappa_count = NA_integer_, unregularised_radius = NA_real_,
-      cv_min_index = NA_integer_, cv_one_se_index = NA_integer_,
-      cv_mean_loss_at_min = NA_real_, cv_se_at_min = NA_real_,
-      cv_one_se_threshold = NA_real_, cv_one_se_eligible_count = NA_integer_,
+      cv_index = NA_integer_, cv_mean_loss_at_selected = NA_real_,
       full_warning_count = NA_integer_, calibration_warning_count = NA_integer_,
       cv_warning_count = NA_integer_, maximum_active_radius_error = NA_real_,
       elapsed_seconds = NA_real_, stringsAsFactors = FALSE
@@ -180,27 +196,12 @@ run_candidate_replication <- function(scenario, scenario_index,
   full_path <- fit_radius_path(train$x, train$y, family, radii, config)
   if (!full_path$ok) {
     reason <- paste0("full-sample path: ", full_path$reason)
-    method_names <- c(
-      "PanIC-CF", config$original_sensitivity_method,
-      "BIC-like", "BIC-active (exploratory)",
-      config$primary_cv_method, config$secondary_cv_method
-    )
+    method_names <- c("PanIC-CF", "BIC-like", config$primary_cv_method)
     primary <- do.call(rbind, lapply(method_names, function(method) {
       empty_evaluation_row(
-        method, TRUE, reason,
-        method %in% c("PanIC-CF", config$original_sensitivity_method), FALSE
+        method, TRUE, reason, method == "PanIC-CF", FALSE
       )
     }))
-    primary <- primary[
-      primary$method %in% c(
-        "PanIC-CF", config$original_sensitivity_method,
-        config$primary_cv_method, config$secondary_cv_method
-      ) |
-        (family == "gaussian" & primary$method == "BIC-like") |
-        (family != "gaussian" &
-           primary$method == "BIC-active (exploratory)"),
-      , drop = FALSE
-    ]
     calibration_rows <- calibration_failure_rows(
       common, streams$calibration_splits, n
     )
@@ -219,15 +220,10 @@ run_candidate_replication <- function(scenario, scenario_index,
         raw_target_max = NA_real_, projected_target_mean = NA_real_,
         kappa_hat = NA_real_, kappa_lower_endpoint = NA_integer_,
         kappa_upper_endpoint = NA_integer_,
-        original_kappa_hat = NA_real_,
-        original_kappa_lower_endpoint = NA_integer_,
-        original_kappa_upper_endpoint = NA_integer_, default_used = 0L,
+        default_used = 0L,
         calibration_mean_min = NA_real_, calibration_se_at_min = NA_real_,
         eligible_kappa_count = NA_integer_, unregularised_radius = NA_real_,
-        cv_min_index = NA_integer_, cv_one_se_index = NA_integer_,
-        cv_mean_loss_at_min = NA_real_, cv_se_at_min = NA_real_,
-        cv_one_se_threshold = NA_real_,
-        cv_one_se_eligible_count = NA_integer_,
+        cv_index = NA_integer_, cv_mean_loss_at_selected = NA_real_,
         full_warning_count = length(full_path$warnings),
         calibration_warning_count = NA_integer_,
         cv_warning_count = NA_integer_,
@@ -249,9 +245,6 @@ run_candidate_replication <- function(scenario, scenario_index,
     NA_real_, nrow = n_units, ncol = length(config$kappa_grid)
   )
   discrepancy <- matrix(
-    NA_real_, nrow = n_units, ncol = length(config$kappa_grid)
-  )
-  discrepancy_original <- matrix(
     NA_real_, nrow = n_units, ncol = length(config$kappa_grid)
   )
   calibration_rows <- vector("list", n_units)
@@ -299,7 +292,6 @@ run_candidate_replication <- function(scenario, scenario_index,
       raw_target <- projected_target <- NA_real_
       below <- above <- projection <- NA_integer_
       weight <- calibration_weight(length(validation), config)
-      original_weight <- original_calibration_weight(length(validation))
 
       if (!length(reasons)) {
         raw_target <- cross_signed_radius(
@@ -323,10 +315,6 @@ run_candidate_replication <- function(scenario, scenario_index,
           discrepancy[unit, ell] <-
             pmax(selected_psi[unit, ell] - target_psi, 0)^2 +
             weight * pmax(target_psi - selected_psi[unit, ell], 0)^2
-          discrepancy_original[unit, ell] <-
-            pmax(selected_psi[unit, ell] - target_psi, 0)^2 +
-            original_weight *
-              pmax(target_psi - selected_psi[unit, ell], 0)^2
         }
       } else {
         calibration_reasons <- c(
@@ -351,7 +339,6 @@ run_candidate_replication <- function(scenario, scenario_index,
           projected_cross_signed_radius = projected_target,
           projected_below_grid = below, projected_above_grid = above,
           projection_applied = projection, weight = weight,
-          original_weight = original_weight,
           training_path_warning_count = length(fold_path$warnings),
           training_pilot_warning_count = length(training_pilot$warnings),
           validation_pilot_warning_count = length(validation_pilot$warnings),
@@ -375,9 +362,6 @@ run_candidate_replication <- function(scenario, scenario_index,
     selection <- select_largest_kappa_one_se(
       discrepancy, config$kappa_grid
     )
-    original_selection <- select_largest_kappa_one_se(
-      discrepancy_original, config$kappa_grid
-    )
   } else {
     if (min(abs(
       config$kappa_grid - config$calibration_default_kappa
@@ -397,20 +381,14 @@ run_candidate_replication <- function(scenario, scenario_index,
         default_index == length(config$kappa_grid)
       )
     )
-    original_selection <- selection
     default_used <- TRUE
   }
   full_penalty_shape <- (1 + psi) * sqrt(log(n) / n)
   pan_index <- smallest_minimiser(
     full_path$risk + selection$kappa * full_penalty_shape
   )
-  original_pan_index <- smallest_minimiser(
-    full_path$risk + original_selection$kappa * full_penalty_shape
-  )
-
-  ## The same independently generated five folds support both CV summaries.
-  ## CV-min is the original comparator.  CV-1SE is the smallest radius whose
-  ## mean fold loss is within one fold-level standard error of the minimum.
+  ## Ordinary five-fold CV selects the smallest radius attaining the minimum
+  ## mean validation loss on the common radius grid.
   cv_assignment <- balanced_folds(n, config$cv_folds, streams$cv_folds)
   cv_validation_loss <- matrix(
     NA_real_, nrow = config$cv_folds, ncol = length(radii)
@@ -445,11 +423,12 @@ run_candidate_replication <- function(scenario, scenario_index,
   cv_selection <- if (cv_failed) {
     NULL
   } else {
-    select_cv_min_and_one_se(cv_validation_loss, radii)
+    select_cv(cv_validation_loss, radii)
   }
 
-  ## The BIC comparison is unchanged and costs no additional fit.
-  active_count <- colSums(abs(full_path$beta) > config$active_tolerance)
+  ## Support is the literal nonzero pattern returned by the fitted path.  The
+  ## BIC-like comparator uses the same exact active-set definition.
+  active_count <- colSums(full_path$beta != 0)
   monotone_active_count <- cummax(active_count)
   if (family == "gaussian") {
     bic_criterion <- full_path$risk +
@@ -459,7 +438,7 @@ run_candidate_replication <- function(scenario, scenario_index,
     bic_criterion <- full_path$risk +
       0.5 * (monotone_active_count + config$bic_epsilon * psi) *
       log(n) / n
-    bic_label <- "BIC-active (exploratory)"
+    bic_label <- "BIC-like"
   }
   bic_index <- smallest_minimiser(bic_criterion)
 
@@ -474,11 +453,6 @@ run_candidate_replication <- function(scenario, scenario_index,
       selection$kappa, calibration_failed, default_used, config
     ),
     evaluate_revised_index(
-      full_path, original_pan_index, config$original_sensitivity_method,
-      truth, test, family, original_selection$kappa, calibration_failed,
-      default_used, config
-    ),
-    evaluate_revised_index(
       full_path, bic_index, bic_label, truth, test, family,
       NA_real_, FALSE, FALSE, config
     ),
@@ -486,15 +460,7 @@ run_candidate_replication <- function(scenario, scenario_index,
       cv_failure_row(config$primary_cv_method)
     } else {
       evaluate_revised_index(
-        full_path, cv_selection$min_index, config$primary_cv_method,
-        truth, test, family, NA_real_, FALSE, FALSE, config
-      )
-    },
-    if (cv_failed) {
-      cv_failure_row(config$secondary_cv_method)
-    } else {
-      evaluate_revised_index(
-        full_path, cv_selection$one_se_index, config$secondary_cv_method,
+        full_path, cv_selection$index, config$primary_cv_method,
         truth, test, family, NA_real_, FALSE, FALSE, config
       )
     }
@@ -552,35 +518,16 @@ run_candidate_replication <- function(scenario, scenario_index,
       kappa_hat = selection$kappa,
       kappa_lower_endpoint = selection$lower_endpoint,
       kappa_upper_endpoint = selection$upper_endpoint,
-      original_kappa_hat = original_selection$kappa,
-      original_kappa_lower_endpoint = original_selection$lower_endpoint,
-      original_kappa_upper_endpoint = original_selection$upper_endpoint,
       default_used = as.integer(default_used),
       calibration_mean_min = selection$mean_at_min,
       calibration_se_at_min = selection$se_at_min,
       eligible_kappa_count = selection$eligible_count,
       unregularised_radius = full_path$unregularised_radius,
-      cv_min_index = if (cv_failed) NA_integer_ else cv_selection$min_index,
-      cv_one_se_index = if (cv_failed) {
-        NA_integer_
-      } else {
-        cv_selection$one_se_index
-      },
-      cv_mean_loss_at_min = if (cv_failed) {
+      cv_index = if (cv_failed) NA_integer_ else cv_selection$index,
+      cv_mean_loss_at_selected = if (cv_failed) {
         NA_real_
       } else {
-        cv_selection$mean_at_min
-      },
-      cv_se_at_min = if (cv_failed) NA_real_ else cv_selection$se_at_min,
-      cv_one_se_threshold = if (cv_failed) {
-        NA_real_
-      } else {
-        cv_selection$threshold
-      },
-      cv_one_se_eligible_count = if (cv_failed) {
-        NA_integer_
-      } else {
-        cv_selection$eligible_count
+        cv_selection$mean_at_selected
       },
       full_warning_count = length(full_path$warnings),
       calibration_warning_count = calibration_warning_count,

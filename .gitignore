@@ -26,7 +26,7 @@ results/*
 !results/seed_ledger.csv
 !results/simulation_summary.csv
 !results/paired_method_contrasts.csv
-!results/paired_panic_cf_vs_cv_min.csv
+!results/paired_panic_cf_vs_cv.csv
 !results/scenario_primary_estimands.csv
 !results/confirmatory_decision.csv
 !results/prediction_margin_sensitivity.csv

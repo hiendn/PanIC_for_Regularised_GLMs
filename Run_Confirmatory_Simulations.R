@@ -74,7 +74,7 @@ configuration <- data.frame(
     "calibration_default_kappa", "calibration_half_splits",
     "calibration_directions_per_split", "calibration_rows",
     "calibration_weight", "cv_folds", "cv_primary_rule",
-    "original_weight_sensitivity", "cv_secondary_rule", "primary_support_estimand",
+    "support_definition", "primary_support_estimand",
     "primary_support_decision", "prediction_guardrail_estimand",
     "prediction_noninferiority_margin",
     "prediction_noninferiority_decision", "one_sided_confidence_level",
@@ -84,7 +84,7 @@ configuration <- data.frame(
     "pilot_coefficient_cap"
   ),
   value = c(
-    "PanIC-CF second confirmation",
+    "PanIC-CF confirmatory simulation",
     if (smoke_mode) "dedicated-smoke" else "production",
     CONFIG$master_seed, PRODUCTION_MASTER_SEED, n_rep,
     CONFIG$n_test, CONFIG$d, length(CONFIG$active), CONFIG$radius_min,
@@ -95,16 +95,12 @@ configuration <- data.frame(
     CONFIG$calibration_half_splits * CONFIG$calibration_directions,
     "sqrt(log(log(n_validation + exp(exp(1)))))", CONFIG$cv_folds,
     "minimum mean five-fold validation loss on radius grid",
-    "log(log(n_validation + exp(exp(1)))); no additional fitting",
-    paste0(
-      "smallest radius within SE_at_CV-min; SE=sd(fold means)/sqrt(",
-      CONFIG$cv_folds, ")"
-    ),
-    "equal-weight seven-scenario mean paired (FP+FN)_PanIC-(FP+FN)_CV-min",
+    "beta_hat != 0 (literal fitted nonzero)",
+    "equal-weight seven-scenario mean paired (FP+FN)_PanIC-(FP+FN)_CV",
     "one-sided 95% upper Monte Carlo bound < 0",
     paste0(
       "equal-weight seven-scenario mean paired relative deviance change ",
-      "(D_PanIC-D_CV-min)/D_CV-min"
+      "(D_PanIC-D_CV)/D_CV"
     ),
     CONFIG$prediction_noninferiority_margin,
     paste0(

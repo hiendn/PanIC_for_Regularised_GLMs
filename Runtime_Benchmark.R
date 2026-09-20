@@ -12,10 +12,11 @@ script_path <- if (length(script_arg)) {
 } else normalizePath("benchmark_runtime.R")
 production_dir <- dirname(script_path)
 .libPaths(c(file.path(production_dir, "Rlib"), .libPaths()))
-source(file.path(production_dir, "reference_implementation", "config.R"))
-source(file.path(
-  production_dir, "reference_implementation", "revised_cf_functions.R"
-))
+source(file.path(production_dir, "Simulation_Config.R"))
+source(file.path(production_dir, "PanIC_CF_Functions.R"))
+## The frozen implementation sourced above defines its own `production_dir`.
+## Restore this script's directory before resolving output and renderer paths.
+production_dir <- dirname(script_path)
 output_name <- arg_value("--output-dir", "results")
 results_dir <- if (grepl("^/", output_name)) output_name else
   file.path(production_dir, output_name)
@@ -42,7 +43,7 @@ time_bic <- function(data, family, radii) {
     full_path <- fit_radius_path(data$x, data$y, family, radii, CONFIG)
     if (!full_path$ok) stop("full path: ", full_path$reason)
     active_count <- cummax(
-      colSums(abs(full_path$beta) > CONFIG$active_tolerance)
+      colSums(full_path$beta != 0)
     )
     scale <- if (family == "gaussian") 1 else 0.5
     criterion <- full_path$risk + scale *
@@ -185,13 +186,13 @@ benchmark_method <- function(family, family_index, method, replication,
   fit <- tryCatch(
     switch(
       method,
-      `Revised PanIC-CF` = time_revised_panic_cf(
+      `PanIC-CF` = time_revised_panic_cf(
         data, family, radii,
         as.integer(seed + 10000L +
           1000L * (seq_len(CONFIG$calibration_half_splits) - 1L))
       ),
-      `5-fold CV` = time_cv(data, family, radii, seed + 30000L),
-      `One-path comparator` = time_bic(data, family, radii),
+      `CV` = time_cv(data, family, radii, seed + 30000L),
+      `BIC-like` = time_bic(data, family, radii),
       stop("Unknown method: ", method)
     ),
     error = function(e) list(
@@ -202,11 +203,8 @@ benchmark_method <- function(family, family_index, method, replication,
       error = conditionMessage(e)
     )
   )
-  reported_method <- if (method == "One-path comparator") {
-    if (family == "gaussian") "BIC-like" else "Exploratory active-count"
-  } else method
   data.frame(
-    family = family, n = CONFIG$runtime_n, method = reported_method,
+    family = family, n = CONFIG$runtime_n, method = method,
     replication = as.integer(replication), data_seed = seed,
     elapsed_seconds = fit$elapsed,
     selected_index = fit$selected_index,
@@ -222,7 +220,7 @@ benchmark_method <- function(family, family_index, method, replication,
 }
 
 families <- c("gaussian", "binomial", "poisson")
-methods <- c("Revised PanIC-CF", "5-fold CV", "One-path comparator")
+methods <- c("PanIC-CF", "CV", "BIC-like")
 
 for (family_index in seq_along(families)) {
   family <- families[family_index]
@@ -289,10 +287,7 @@ summary_rows <- lapply(
 runtime_summary <- do.call(rbind, summary_rows)
 runtime_summary <- runtime_summary[
   order(match(runtime_summary$family, families),
-        match(runtime_summary$method, c(
-          "Revised PanIC-CF", "5-fold CV", "BIC-like",
-          "Exploratory active-count"
-        ))),
+        match(runtime_summary$method, methods)),
 ]
 write.csv(runtime_summary, file.path(results_dir, "runtime_summary.csv"),
           row.names = FALSE)
@@ -322,14 +317,12 @@ writeLines(
     paste0("Timed replications per family and method: ",
            CONFIG$runtime_replications),
     "Elapsed time excludes data generation and independent test evaluation.",
-    paste0("Revised PanIC-CF includes ten half-sample path fits, ten ",
+    paste0("PanIC-CF includes ten half-sample path fits, ten ",
            "training-sign GLMs, ten independent validation GLMs, and one ",
            "full-sample path."),
-    "Five-fold CV includes five 80%-sample paths and one full-sample path.",
-    paste0("The Gaussian BIC-like comparator includes one full-sample path ",
-           "and active-count criterion evaluation."),
-    paste0("The logistic and Poisson exploratory active-count comparators ",
-           "include one full-sample path and active-count criterion evaluation."),
+    "CV includes five 80%-sample paths and one full-sample path.",
+    paste0("The BIC-like comparator includes one full-sample path and ",
+           "family-appropriate active-count criterion evaluation."),
     paste0("R: ", R.version.string),
     paste0("glmnet: ", as.character(packageVersion("glmnet")))
   ),

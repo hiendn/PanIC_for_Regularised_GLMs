@@ -1,4 +1,4 @@
-Timing date: 2026-09-18 14:29:24 AEST
+Timing date: 2026-09-21 00:17:23 AEST
 Operating system: Darwin 25.6.0
 Machine: arm64
 Model Name: MacBook Pro
@@ -10,9 +10,8 @@ Timing worker count: 1
 Warm-up runs per family and method: 2
 Timed replications per family and method: 20
 Elapsed time excludes data generation and independent test evaluation.
-Revised PanIC-CF includes ten half-sample path fits, ten training-sign GLMs, ten independent validation GLMs, and one full-sample path.
-Five-fold CV includes five 80%-sample paths and one full-sample path.
-The Gaussian BIC-like comparator includes one full-sample path and active-count criterion evaluation.
-The logistic and Poisson exploratory active-count comparators include one full-sample path and active-count criterion evaluation.
+PanIC-CF includes ten half-sample path fits, ten training-sign GLMs, ten independent validation GLMs, and one full-sample path.
+CV includes five 80%-sample paths and one full-sample path.
+The BIC-like comparator includes one full-sample path and family-appropriate active-count criterion evaluation.
 R: R version 4.4.0 (2024-04-24)
 glmnet: 4.1.10

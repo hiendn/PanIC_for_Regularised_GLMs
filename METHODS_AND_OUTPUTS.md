@@ -1,189 +1,191 @@
 # Locked methods and outputs
 
-## Inherited design
+## Inherited simulation design
 
-The seven data-generating settings, 20-dimensional coefficient vector with ten
-active slopes, signal scaling, independent test size 2,000, radius interval
-`[0,20]`, 121-point primary radius grid, 31-point multiplier grid, five
-balanced half-splits scored in both directions, solver tolerances, and failure
-policy are inherited without change from the preceding locked production
-release.
+The study retains seven data-generating settings, a 20-dimensional coefficient
+vector with ten active slopes, the inherited signal scaling, an independent
+test sample of size 2,000, and a radius interval `[0,20]`. The primary path has
+121 equally spaced radii. Calibration uses 31 log-spaced multipliers from
+`0.01` to `100` and five balanced half-splits scored in both directions. The
+solver controls and failure policy are shared across methods.
 
-For a calibration direction, the training-half GLM supplies coefficient signs
-and the independent validation-half GLM supplies coefficient magnitudes. The
-raw cross-signed target is
+The frozen sources in `reference_implementation/` document the preceding
+numerical engine. The active method set, support rule, seeds, and outputs are
+defined by the current top-level configuration and simulation files.
+
+## Assessed methods
+
+Exactly three methods are assessed in every replication.
+
+### PanIC-CF
+
+For each calibration direction, the training-half GLM supplies coefficient
+signs and the independent validation-half GLM supplies coefficient magnitudes:
 
 ```text
-C_raw = sum_j sign(beta_training[j]) * beta_validation[j]).
+C_raw = sum_j sign(beta_training[j]) * beta_validation[j].
 ```
 
-The raw value is retained for diagnostics and projected onto `[0,20]` only for
-scoring. The selected multiplier is the largest member of the unchanged grid
-whose mean discrepancy is within one descriptive row-level standard error of
-the minimum over the ten directions. This is an algorithmic stabilization
-rule, not a confidence interval.
-
-## Revised and original PanIC-CF weights
-
-Let `psi_hat` be the normalized radius selected for a calibration path and
-`psi_target` the projected normalized target. Revised PanIC-CF uses
+`C_raw` is retained for diagnostics and projected onto `[0,20]` for scoring.
+Let `psi_hat` denote a candidate selected radius normalized to `[0,1]`, and let
+`psi_target` be the normalized projected target. The calibration discrepancy is
 
 ```text
 [psi_hat - psi_target]_+^2
-  + sqrt(log(log(n_V + exp(exp(1)))))
+  + sqrt(log(log(n_validation + exp(exp(1)))))
       * [psi_target - psi_hat]_+^2.
 ```
 
-The same-path sensitivity `PanIC-CF-original` replaces the square-root
-log-log weight by the preceding log-log weight. Both discrepancies are formed
-during the same loop over the same selected calibration radii. Each has its
-own one-standard-error multiplier selection, but the sensitivity requires no
-additional path, pilot, or test fit.
+For each multiplier, the discrepancy is averaged over the ten directions. The
+selected multiplier is the largest grid value whose mean is within one
+descriptive row-level standard error of the minimum. This is an algorithmic
+stabilization rule, not a confidence interval. The selected multiplier is then
+used with the full-sample path.
 
-The slower primary weight still diverges and is `o(n)`, so the existing
-asymmetric-target consistency condition is retained. The multiplier remains
-in the same fixed positive compact grid, so the uniform-multiplier PanIC
-argument is unchanged.
+### CV
 
-## CV comparators
-
-The independently seeded balanced five-fold partition is unchanged. At every
-radius, the mean and standard error of the five fold-specific validation means
-are calculated. `CV-min` chooses the smallest-indexed minimizer of mean loss,
-which exactly reproduces the preceding comparator.
-
-`CV-1SE` chooses
+An independently seeded balanced five-fold partition is used. At each radius,
+the validation loss is averaged over folds. CV selects the smallest-indexed
+radius attaining the minimum mean loss:
 
 ```text
-min {j : mean_loss[j] <= mean_loss[j_min] + SE_loss[j_min]},
+j_CV = min argmin_j mean_fold loss(fold, j).
 ```
 
-where radii are in strictly increasing order and
-`SE_loss[j] = sd(fold_loss[,j])/sqrt(5)`. Thus it chooses the smallest, most
-regularized eligible radius. It reuses the CV-min fold paths and full-sample
-path and is strictly secondary.
+### BIC-like
+
+The BIC-like comparator uses the full-sample path and a monotone cumulative
+active count. The Gaussian criterion uses the inherited `log(n)/n` scaling;
+the logistic and Poisson rows use the inherited one-half scaling and remain
+exploratory analogues outside the Gaussian proposition. A small radius-index
+term breaks criterion ties deterministically.
+
+## Exact support rule
+
+For every method,
+
+```text
+selected_j = (beta_hat_j != 0).
+```
+
+False positives, false negatives, exact recovery, and total support error use
+this literal fitted-nonzero rule. The BIC-like active count is likewise
+`sum_j(beta_hat_j != 0)` at each path point before the cumulative maximum is
+taken. No numerical coefficient threshold is applied. The separate path-radius
+interpolation tolerance remains a solver-accuracy diagnostic and is not a
+support threshold.
 
 ## Primary estimands and joint decision
 
-For scenario `s`, let `d_sr` be the paired total-support-error contrast in
-replication `r`:
+For scenario `s` and replication `r`, the paired support contrast is
 
 ```text
-d_sr = (FP + FN)_PanIC-CF,sr - (FP + FN)_CV-min,sr.
+d_sr = (FP + FN)_PanIC-CF,sr - (FP + FN)_CV,sr.
 ```
 
 If `dbar_s` and `se_s` are its scenario mean and Monte Carlo standard error,
-the locked equal-weight primary effect and MCSE are
+the equal-weight effect and MCSE are
 
 ```text
 Delta_support = (1/7) * sum_s dbar_s,
 MCSE_support  = (1/7) * sqrt(sum_s se_s^2).
 ```
 
-The scenario streams are disjoint. Support superiority passes when
+Support superiority passes when
 
 ```text
 Delta_support + qnorm(0.95) * MCSE_support < 0.
 ```
 
-For prediction, the replication-level paired contrast is scale-free:
+The paired prediction contrast is
 
 ```text
-q_sr = (D_PanIC-CF,sr - D_CV-min,sr) / D_CV-min,sr.
+q_sr = (D_PanIC-CF,sr - D_CV,sr) / D_CV,sr.
 ```
 
-The implemented estimand is defined only when every paired `CV-min` test
-deviance in the denominator is finite and strictly positive. This condition is
-enforced before division. A violation stops analysis and verification; no
-replication is deleted, and no denominator is floored, replaced, or otherwise
-regularized. The scenario-level audit records the minimum and maximum realised
-denominators, counts of nonfinite or nonpositive denominators and nonfinite
-relative contrasts, and the mean, variance, second moment, and maximum absolute
-value of the relative contrast. The independent full-result verifier
-reconstructs this audit from the paired replication rows.
+Every CV denominator must be finite and strictly positive. A violation stops
+analysis and verification; no row is deleted and no denominator is floored or
+replaced. Prediction noninferiority passes when the one-sided 95% upper Monte
+Carlo bound for the equal-weight mean is below `0.001`. Margins `0.0005`,
+`0.0025`, and `0.005` are sensitivity summaries only.
 
-The equal-weight mean and MCSE use the same formulas. Prediction
-noninferiority passes when its one-sided 95% upper normal Monte Carlo bound is
-below the prospectively fixed margin `0.001`. Sensitivity margins `0.0005`,
-`0.0025`, and `0.005` are reported without changing the decision.
-
-Complete PanIC-CF/CV-min pairing in all seven settings is also required. The
-support and prediction requirements form an intersection-union decision: a
-joint claim is made only if both one-sided level-0.05 component requirements
-pass. No multiplicity reduction is needed to control the union null when both
-components are required.
-
-Scenario-specific contrasts, comparisons involving PanIC-CF-original or
-CV-1SE, and the grid study are secondary. They cannot rescue a failed locked
-decision and do not justify universal dominance over cross-validation.
+The joint conclusion requires complete PanIC-CF/CV pairing in all seven
+settings and both component decisions to pass. Scenario-specific contrasts,
+comparisons with BIC-like, and the grid study cannot rescue a failed joint
+decision.
 
 ## Failure and numerical policy
 
-If a full-sample path fails, every method depending on that path is marked
-failed. If calibration alone fails while the full path is valid, the unchanged
-prespecified multiplier `kappa=1` is used and both calibration failure and
-default use are recorded. If a CV fold path fails, both CV-min and CV-1SE are
-marked failed. No failed estimate is silently replaced.
+If the full-sample path fails, all three method rows are marked failed. If
+calibration fails while the full path remains valid, PanIC-CF uses the
+prespecified multiplier `kappa=1` and records the failure and default. If a CV
+fold path fails, the CV row is marked failed. No failed estimate is silently
+replaced.
 
-The joint claim requires all 1,000 paired observations in all seven settings;
-otherwise `complete_pairing=0` and `joint_claim_pass=0`, even if the numerical
-bounds happen to pass.
+The production decision requires all 1,000 paired observations in every
+scenario. The solver, interpolation, warning, projection, endpoint, and timing
+diagnostics are retained even when they are not displayed in the compact
+manuscript tables.
+
+## Seed families
+
+The fresh locked seeds are:
+
+- main production: `2136092001`;
+- grid production: `2138092001`;
+- main smoke: `2140092001`; and
+- grid smoke: `2142092001`.
+
+The new method set and exact-nonzero policy were locked before these seed
+families were used. Earlier development, production, grid, and smoke families
+are listed as prior or retired and are included in the non-overlap audit.
 
 ## Main outputs
 
-- `*_primary.csv`: five method rows per data-set replication.
-- `*_diagnostics.csv`: failures, warnings, multipliers, CV indices and
-  one-standard-error thresholds, projection counts, and interpolation error.
-- `*_calibration_rows.csv`: ten direction rows with revised and original
-  weights.
-- `*_raw.rds`: lossless per-replication R objects.
-- `seed_ledger.csv`: every explicit training, split, CV, and test seed.
-- `simulation_summary.csv`: method means and Monte Carlo standard errors.
-- `paired_method_contrasts.csv`: six prespecified paired method comparisons.
-- `scenario_primary_estimands.csv`: seven support and relative-deviance
-  effects with one-sided upper bounds.
-- `confirmatory_decision.csv`: the locked aggregate effects and joint gate.
-- `prediction_margin_sensitivity.csv`: primary and sensitivity margins.
-- `relative_deviance_denominator_audit.csv`: scenario-level domain audit and
-  empirical second-moment diagnostic for the paired relative-deviance
-  contrast.
-- `diagnostic_summary.csv` and `calibration_target_summary.csv`: numerical and
-  target diagnostics.
-- `table_primary_support.tex`, `table_primary_performance.tex`,
-  `table_confirmatory_decision.tex`, and `table_calibration.tex`: canonical
-  deterministic mirrors of the four main-study tables embedded in the
-  manuscript.
+- `*_primary.csv`: three method rows per data-set replication.
+- `*_diagnostics.csv`: path, calibration, CV, warning, endpoint, projection,
+  multiplier, and timing diagnostics.
+- `*_calibration_rows.csv`: ten calibration-direction rows with targets and
+  the active PanIC-CF weight.
+- `*_raw.rds`: lossless per-replication objects.
+- `seed_ledger.csv`: every explicit training, calibration-split, CV-fold, and
+  test seed.
+- `simulation_summary.csv`: means and Monte Carlo standard errors for the
+  three methods in seven scenarios.
+- `paired_method_contrasts.csv`: the three pairwise method comparisons in each
+  scenario.
+- `paired_panic_cf_vs_cv.csv`: the PanIC-CF/CV rows used by the joint decision.
+- `scenario_primary_estimands.csv` and `confirmatory_decision.csv`: the seven
+  scenario effects and equal-weight joint gate.
+- `prediction_margin_sensitivity.csv`: the primary and sensitivity margins.
+- `relative_deviance_denominator_audit.csv`: the denominator-domain and
+  finite-moment audit.
+- `diagnostic_summary.csv` and `calibration_target_summary.csv`: compact
+  numerical and target diagnostics.
 
 ## Grid outputs
 
-The fresh-seed grid study produces replication files for 61, 121, and 241
-radii, `grid_sensitivity_summary.csv`, paired across-grid contrasts,
-within-grid method contrasts, a locked grid configuration, and the canonical
-`table_grid_sensitivity.tex` mirror. Data, streams, raw targets, and both
-weights must match across grids before the runner completes.
+The grid study uses 500 common-random-number replications at 61, 121, and 241
+radii. Each grid has the same three assessed methods. The runner checks that
+data, random streams, and raw calibration targets agree across grids before it
+finishes.
 
-## Deterministic manuscript-table layer
+The retained grid outputs comprise the replication files,
+`grid_sensitivity_summary.csv`, paired across-grid contrasts, within-grid
+method contrasts, the locked grid configuration, and
+`table_grid_sensitivity.tex`. The summary has nine grid-by-method rows. Runtime
+is not a column of the manuscript grid table.
 
-`Manuscript_Table_Rendering.R` deterministically renders all seven final table
-fragments from the retained compact CSV summaries. The command-line entry point
+## Deterministic manuscript tables
 
-```sh
-Rscript Render_Manuscript_Tables.R \
-  --results-dir=results --output-dir=/tmp/panic-tables
-```
+`Manuscript_Table_Rendering.R` renders the seven table mirrors from compact CSV
+summaries without fitting a model or drawing a random number. The primary
+performance table retains selected radius and signed attained-radius error but
+does not repeat attained radius. The calibration table displays target, bias,
+and multiplier summaries; detailed operational counts remain in the diagnostic
+files. The grid table contains only the three active methods and omits runtime.
 
-does not fit a model, draw a random number, or alter a statistical result. The
-checksum-controlled files under `results/table_*.tex` are reproducibility
-mirrors of the rendered output.
-
-`manuscript/main.tex` embeds exact copies of all seven table environments
-between stable `PANIC INLINE TABLE` marker comments. It does not load the
-mirror files. `Manuscript_Table_Tools.R --verify` checks byte-for-byte
-agreement between each embedded block and its mirror and fails if any external
-table-file reference remains. Its `--refresh` mode replaces the seven marked
-blocks from the mirrors and immediately performs the same verification.
-
-This deterministic rendering and embedding layer is a presentation and
-reproducibility amendment. It leaves the locked method, estimands, production
-seeds, retained simulation rows, summaries, decision bounds, and all reported
-numerical results unchanged.
+`manuscript/main.tex` embeds exact copies of the rendered tables between stable
+marker comments. `Manuscript_Table_Tools.R --verify` checks byte-for-byte
+agreement with the mirrors under `results/` and rejects external table-file
+references.

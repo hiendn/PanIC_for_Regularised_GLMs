@@ -71,7 +71,7 @@ scenario <- data.frame(
 scenario_seed_index <- 1L
 
 for (m in grid_sizes) {
-  message("Running second-confirmation grid sensitivity m=", m,
+  message("Running grid sensitivity m=", m,
           " with common random numbers")
   worker <- function(replication) {
     tryCatch(
@@ -177,8 +177,7 @@ summary_rows <- lapply(
 )
 grid_summary <- do.call(rbind, summary_rows)
 method_order <- c(
-  "PanIC-CF", CONFIG$original_sensitivity_method, "BIC-like",
-  CONFIG$primary_cv_method, CONFIG$secondary_cv_method
+  "PanIC-CF", "BIC-like", CONFIG$primary_cv_method
 )
 grid_summary <- grid_summary[order(
   grid_summary$radius_points, match(grid_summary$method, method_order)
@@ -226,13 +225,11 @@ write.csv(
   row.names = FALSE
 )
 
-## Within-grid method comparisons preserve the revised-vs-CV and
-## revised-vs-original distinctions used by the main study.
+## Within-grid method comparisons cover all three assessed methods.
 method_pairs <- list(
   c("PanIC-CF", CONFIG$primary_cv_method),
-  c(CONFIG$original_sensitivity_method, CONFIG$primary_cv_method),
-  c("PanIC-CF", CONFIG$original_sensitivity_method),
-  c("PanIC-CF", CONFIG$secondary_cv_method)
+  c("PanIC-CF", "BIC-like"),
+  c("BIC-like", CONFIG$primary_cv_method)
 )
 method_rows <- list()
 cursor <- 1L
@@ -269,12 +266,12 @@ write.csv(
   row.names = FALSE
 )
 
-## Verify that data, seeds, split targets, and both weights are identical
+## Verify that data, seeds, split targets, and calibration weights are identical
 ## across the three grids before any grid comparison is retained.
 calibration_key <- c("replication", "split_repeat", "direction")
 common_columns <- c(
   calibration_key, "training_seed", "split_seed", "test_seed",
-  "raw_cross_signed_radius", "weight", "original_weight"
+  "raw_cross_signed_radius", "weight"
 )
 reference <- calibration[
   calibration$radius_points == 121L, common_columns
@@ -293,7 +290,7 @@ for (m in c(61L, 241L)) {
           comparison[[paste0(name, "_candidate")]])
   }, logical(1)))
   numeric_columns <- c(
-    "raw_cross_signed_radius", "weight", "original_weight"
+    "raw_cross_signed_radius", "weight"
   )
   numeric_ok <- all(vapply(numeric_columns, function(name) {
     max(abs(
@@ -355,4 +352,4 @@ grid_tables <- setNames(
   "table_grid_sensitivity.tex"
 )
 write_manuscript_table_subset(grid_tables, results_dir)
-cat("Second-confirmation common-random-number grid study completed.\n")
+cat("Common-random-number grid study completed.\n")

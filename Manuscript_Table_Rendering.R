@@ -26,7 +26,11 @@ PANIC_SCENARIO_LABELS <- c(
 )
 
 PANIC_METHOD_ORDER <- c(
-  "PanIC-CF", "PanIC-CF-original", "BIC-like", "CV-min", "CV-1SE"
+  "PanIC-CF", "BIC-like", "CV"
+)
+
+PANIC_INPUT_METHODS <- c(
+  "PanIC-CF", "BIC-like", "CV"
 )
 
 panic_require_columns <- function(data, required, object_name) {
@@ -41,7 +45,19 @@ panic_require_columns <- function(data, required, object_name) {
 }
 
 panic_reader_method <- function(method) {
-  ifelse(method == "BIC-active (exploratory)", "BIC-like", method)
+  method
+}
+
+panic_assessed_method_rows <- function(data, object_name) {
+  unexpected <- setdiff(unique(data$method), PANIC_INPUT_METHODS)
+  if (length(unexpected)) {
+    stop(
+      "Unexpected method in ", object_name, ": ",
+      paste(unexpected, collapse = ", "), call. = FALSE
+    )
+  }
+  data$reader_method <- panic_reader_method(data$method)
+  data[data$reader_method %in% PANIC_METHOD_ORDER, , drop = FALSE]
 }
 
 panic_cell <- function(estimate, mcse, digits) {
@@ -80,23 +96,22 @@ panic_configuration_value <- function(configuration, item) {
 panic_order_primary_rows <- function(summary) {
   panic_require_columns(summary, c("scenario_id", "method"),
                         "simulation_summary")
-  display_method <- panic_reader_method(summary$method)
-  scenario_rank <- match(summary$scenario_id, names(PANIC_SCENARIO_LABELS))
-  method_rank <- match(display_method, PANIC_METHOD_ORDER)
+  assessed <- panic_assessed_method_rows(summary, "simulation_summary")
+  scenario_rank <- match(assessed$scenario_id, names(PANIC_SCENARIO_LABELS))
+  method_rank <- match(assessed$reader_method, PANIC_METHOD_ORDER)
   if (anyNA(scenario_rank) || anyNA(method_rank)) {
     stop("Unexpected scenario or method in simulation_summary", call. = FALSE)
   }
-  keys <- paste(summary$scenario_id, display_method, sep = "\r")
+  keys <- paste(assessed$scenario_id, assessed$reader_method, sep = "\r")
   expected_keys <- as.vector(outer(
     names(PANIC_SCENARIO_LABELS), PANIC_METHOD_ORDER, paste, sep = "\r"
   ))
-  if (nrow(summary) != length(expected_keys) || anyDuplicated(keys) ||
+  if (nrow(assessed) != length(expected_keys) || anyDuplicated(keys) ||
       !setequal(keys, expected_keys)) {
-    stop("simulation_summary does not contain the expected 7-by-5 rows",
+    stop("simulation_summary does not contain the expected 7-by-3 assessed rows",
          call. = FALSE)
   }
-  ordered <- summary[order(scenario_rank, method_rank), , drop = FALSE]
-  ordered$reader_method <- panic_reader_method(ordered$method)
+  ordered <- assessed[order(scenario_rank, method_rank), , drop = FALSE]
   rownames(ordered) <- NULL
   ordered
 }
@@ -124,16 +139,10 @@ render_primary_support_table <- function(simulation_summary, configuration) {
     "\\begin{table}[H]",
     "\\centering",
     paste0(
-      "\\caption{Support recovery for PanIC-CF and the prespecified ",
-      "comparators. Entries are Monte Carlo means with Monte Carlo standard ",
-      "errors in parentheses over ", panic_plain_integer(attempted),
-      " attempted replications. PanIC-CF-original is a same-path sensitivity ",
-      "analysis, and CV-1SE is a secondary trade-off comparator. FPR and FNR ",
-      "use the ten inactive and ten active slopes, respectively; a slope is ",
-      "selected when $\\lvert\\widehat\\beta_j\\rvert>10^{-8}$. The active-count ",
-      "comparator is labelled BIC-like in every family for compactness, but ",
-      "its logistic and Poisson rows are exploratory analogues outside the ",
-      "scope of Proposition \\ref{Prop: BIC-like consistency}.}"
+      "\\caption{Support recovery for the assessed methods over ",
+      panic_plain_integer(attempted), " replications; parentheses give Monte ",
+      "Carlo standard errors. FPR and FNR use the ten inactive and ten active ",
+      "slopes, respectively.}"
     ),
     "\\label{Table: revised primary support}",
     "\\begin{adjustbox}{width=\\textwidth}",
@@ -176,42 +185,29 @@ render_primary_performance_table <- function(simulation_summary,
     "scenario_id", "method", "attempted_replications",
     "signed_attained_radius_error_mean",
     "signed_attained_radius_error_mcse", "selected_grid_radius_mean",
-    "selected_grid_radius_mcse", "attained_radius_mean",
-    "attained_radius_mcse", "test_deviance_mean", "test_deviance_mcse"
+    "selected_grid_radius_mcse", "test_deviance_mean", "test_deviance_mcse"
   )
   panic_require_columns(simulation_summary, required, "simulation_summary")
   rows <- panic_order_primary_rows(simulation_summary)
   attempted <- panic_single_value(
     rows$attempted_replications, "attempted replications"
   )
-  test_size <- as.numeric(panic_configuration_value(
-    configuration, "independent_test_size"
-  ))
-
   lines <- c(
     "\\begin{table}[H]",
     "\\centering",
     paste0(
-      "\\caption{Selected and attained constraint radii and independent-test ",
-      "performance. Entries are Monte Carlo means with Monte Carlo standard ",
-      "errors in parentheses over ", panic_plain_integer(attempted),
-      " attempted replications. Test deviance is evaluated on an independent ",
-      "sample of size ", panic_plain_integer(test_size), ". Signed radius error ",
-      "is $\\lVert\\widehat\\beta\\rVert_1-C^\\star$. PanIC-CF-original is a ",
-      "same-path sensitivity analysis, and CV-1SE is a secondary trade-off ",
-      "comparator. The active-count comparator is labelled BIC-like in every ",
-      "family for compactness, but its logistic and Poisson rows are exploratory ",
-      "analogues outside the scope of Proposition ",
-      "\\ref{Prop: BIC-like consistency}.}"
+      "\\caption{Selected radii and independent-test performance for the ",
+      "assessed methods over ", panic_plain_integer(attempted),
+      " replications; parentheses give Monte Carlo standard errors.}"
     ),
     "\\label{Table: revised primary performance}",
     "\\begin{adjustbox}{width=\\textwidth}",
     "\\scriptsize",
-    "\\begin{tabular}{llrrrr}",
+    "\\begin{tabular}{llrrr}",
     "\\hline",
     paste0(
-      "Setting & Method & Signed radius error & $C_{\\rm sel}$ & ",
-      "$\\lVert\\widehat\\beta\\rVert_1$ & Test deviance \\\\"
+      "Setting & Method & Signed attained-radius error & ",
+      "$C_{\\rm sel}$ & Test deviance \\\\"
     ),
     "\\hline"
   )
@@ -233,8 +229,7 @@ render_primary_performance_table <- function(simulation_summary,
       ), " & ",
       panic_cell(
         row$selected_grid_radius_mean, row$selected_grid_radius_mcse, 3L
-      ), " & ",
-      panic_cell(row$attained_radius_mean, row$attained_radius_mcse, 3L),
+      ),
       " & ",
       panic_cell(row$test_deviance_mean, row$test_deviance_mcse, 4L),
       " \\\\"
@@ -266,8 +261,8 @@ render_confirmatory_decision_table <- function(confirmatory_decision) {
     "\\begin{table}[H]",
     "\\centering",
     paste0(
-      "\\caption{Prespecified joint confirmatory comparison of PanIC-CF with ",
-      "CV-min. The two endpoints are equal-weight means over the seven ",
+      "\\caption{Joint comparison of PanIC-CF with ",
+      "CV. The two endpoints are equal-weight means over the seven ",
       "settings; the relative-deviance endpoint is dimensionless. The joint ",
       "conclusion requires both one-sided criteria to hold.}"
     ),
@@ -312,8 +307,7 @@ render_calibration_table <- function(calibration_target_summary,
     "raw_target_bias_mcse"
   )
   diagnostic_required <- c(
-    "scenario_id", "attempted_replications", "calibration_failures",
-    "calibration_default_uses", "projections", "kappa_q25",
+    "scenario_id", "attempted_replications", "kappa_q25",
     "kappa_median", "kappa_q75"
   )
   panic_require_columns(calibration_target_summary, target_required,
@@ -347,24 +341,20 @@ render_calibration_table <- function(calibration_target_summary,
     "\\begin{table}[H]",
     "\\centering",
     paste0(
-      "\\caption{Calibration targets, selected multipliers, and failure ",
-      "diagnostics for PanIC-CF. The ten raw cross-signed targets are averaged ",
-      "within each data-set replication before the across-replication mean and ",
-      "Monte Carlo standard error in parentheses are computed over $N=",
-      panic_latex_integer(replications), "$ replications. Raw bias is the mean ",
-      "target minus $C^\\star$; multiplier entries are median [first quartile, ",
-      "third quartile]. Calibration-failure and prespecified-default columns ",
-      "count replications, whereas projections count calibration rows.}"
+      "\\caption{PanIC-CF calibration over $N=",
+      panic_latex_integer(replications), "$ replications. Raw cross-signed ",
+      "targets are first averaged within each data-set replication; parentheses ",
+      "give Monte Carlo standard errors across replications. Raw bias is the ",
+      "mean target minus $C^\\star$; multiplier entries are median [Q1,Q3].}"
     ),
     "\\label{Table: revised calibration}",
     "\\begin{adjustbox}{width=\\textwidth}",
     "\\scriptsize",
-    "\\begin{tabular}{lrrrlrrr}",
+    "\\begin{tabular}{lrrrl}",
     "\\hline",
     paste0(
       "Setting & $C^\\star$ & Mean raw target & Raw bias & ",
-      "$\\widehat\\kappa$ [Q1,Q3] & Cal. failures & Defaults & Projections ",
-      "\\\\"
+      "$\\widehat\\kappa$ [Q1,Q3] \\\\"
     ),
     "\\hline"
   )
@@ -378,10 +368,7 @@ render_calibration_table <- function(calibration_target_summary,
       sprintf(
         "%.3f [%.3f, %.3f]", row$kappa_median, row$kappa_q25,
         row$kappa_q75
-      ), " & ",
-      sprintf("%d", as.integer(row$calibration_failures)), " & ",
-      sprintf("%d", as.integer(row$calibration_default_uses)), " & ",
-      sprintf("%d", as.integer(row$projections)), " \\\\"
+      ), " \\\\"
     ))
   }
   c(lines, "\\hline", "\\end{tabular}", "\\end{adjustbox}",
@@ -393,13 +380,13 @@ render_grid_sensitivity_table <- function(grid_sensitivity_summary) {
     "radius_points", "method", "grid_spacing", "attempted_replications",
     "wrong_mean", "wrong_mcse", "exact_mean", "exact_mcse",
     "test_deviance_mean", "test_deviance_mcse",
-    "selected_grid_radius_mean", "selected_grid_radius_mcse",
-    "mean_shared_runtime", "mcse_shared_runtime"
+    "selected_grid_radius_mean", "selected_grid_radius_mcse"
   )
   panic_require_columns(grid_sensitivity_summary, required,
                         "grid_sensitivity_summary")
-  rows <- grid_sensitivity_summary
-  rows$reader_method <- panic_reader_method(rows$method)
+  rows <- panic_assessed_method_rows(
+    grid_sensitivity_summary, "grid_sensitivity_summary"
+  )
   radius_values <- sort(unique(rows$radius_points))
   radius_rank <- match(rows$radius_points, radius_values)
   method_rank <- match(rows$reader_method, PANIC_METHOD_ORDER)
@@ -421,23 +408,20 @@ render_grid_sensitivity_table <- function(grid_sensitivity_summary) {
     "\\begin{table}[H]",
     "\\centering",
     paste0(
-      "\\caption{Radius-grid sensitivity in the independent Gaussian setting ",
-      "with $n=1000$ and common random numbers across $N=",
-      panic_plain_integer(replications), "$ replications. Every grid spans ",
-      "$[0,20]$. Entries are means with Monte Carlo standard errors in ",
-      "parentheses. PanIC-CF-original and PanIC-CF share fitted paths, as do ",
-      "CV-min and CV-1SE. Shared runtime is the end-to-end time for the ",
-      "full-sample path, ten half-sample calibration directions, and five ",
-      "ordinary CV folds.}"
+      "\\caption{Radius-grid sensitivity for the assessed methods in the ",
+      "independent Gaussian setting with $n=1000$ and $N=",
+      panic_latex_integer(replications), "$ common-random-number replications. ",
+      "Each grid spans $[0,20]$; entries are means with Monte Carlo standard ",
+      "errors in parentheses.}"
     ),
     "\\label{Table: grid sensitivity}",
     "\\begin{adjustbox}{width=\\textwidth}",
     "\\scriptsize",
-    "\\begin{tabular}{rrlrrrrr}",
+    "\\begin{tabular}{rrlrrrr}",
     "\\hline",
     paste0(
       "$m$ & Spacing & Method & Total support error & Exact & Test deviance ",
-      "& Selected radius & Shared runtime (s) \\\\"
+      "& Selected radius \\\\"
     ),
     "\\hline"
   )
@@ -452,9 +436,7 @@ render_grid_sensitivity_table <- function(grid_sensitivity_summary) {
       " & ",
       panic_cell(
         row$selected_grid_radius_mean, row$selected_grid_radius_mcse, 3L
-      ), " & ",
-      panic_cell(row$mean_shared_runtime, row$mcse_shared_runtime, 4L),
-      " \\\\"
+      ), " \\\\"
     ))
   }
   c(lines, "\\hline", "\\end{tabular}", "\\end{adjustbox}",

@@ -76,9 +76,7 @@ summary_rows <- lapply(
 )
 simulation_summary <- do.call(rbind, summary_rows)
 method_order <- c(
-  "PanIC-CF", CONFIG$original_sensitivity_method, "BIC-like",
-  "BIC-active (exploratory)", CONFIG$primary_cv_method,
-  CONFIG$secondary_cv_method
+  "PanIC-CF", "BIC-like", CONFIG$primary_cv_method
 )
 simulation_summary <- simulation_summary[order(
   match(simulation_summary$scenario_id, SCENARIOS$scenario_id),
@@ -94,11 +92,8 @@ contrast_metrics <- c(
 )
 method_pairs <- list(
   c("PanIC-CF", CONFIG$primary_cv_method),
-  c(CONFIG$original_sensitivity_method, CONFIG$primary_cv_method),
-  c("PanIC-CF", CONFIG$original_sensitivity_method),
-  c("PanIC-CF", CONFIG$secondary_cv_method),
-  c(CONFIG$original_sensitivity_method, CONFIG$secondary_cv_method),
-  c(CONFIG$secondary_cv_method, CONFIG$primary_cv_method)
+  c("PanIC-CF", "BIC-like"),
+  c("BIC-like", CONFIG$primary_cv_method)
 )
 paired_method_contrast <- function(dat, lhs_method, rhs_method) {
   lhs <- dat[dat$method == lhs_method & dat$method_failed == 0L, ]
@@ -171,7 +166,7 @@ write.csv(
     paired_contrasts$lhs_method == "PanIC-CF" &
       paired_contrasts$rhs_method == CONFIG$primary_cv_method,
   ],
-  file.path(results_dir, "paired_panic_cf_vs_cv_min.csv"), row.names = FALSE
+  file.path(results_dir, "paired_panic_cf_vs_cv.csv"), row.names = FALSE
 )
 
 z_support <- qnorm(1 - CONFIG$primary_support_alpha)
@@ -225,12 +220,12 @@ denominator_audit_rows <- lapply(seq_len(nrow(SCENARIOS)), function(i) {
     n = SCENARIOS$n[i],
     rho = SCENARIOS$rho[i],
     paired_replications = nrow(paired),
-    nonfinite_cv_min_test_deviances = sum(!is.finite(denominator)),
-    nonpositive_cv_min_test_deviances = sum(
+    nonfinite_cv_test_deviances = sum(!is.finite(denominator)),
+    nonpositive_cv_test_deviances = sum(
       is.finite(denominator) & denominator <= 0
     ),
-    minimum_cv_min_test_deviance = min(denominator),
-    maximum_cv_min_test_deviance = max(denominator),
+    minimum_cv_test_deviance = min(denominator),
+    maximum_cv_test_deviance = max(denominator),
     nonfinite_relative_contrasts = sum(!is.finite(relative_contrast)),
     relative_contrast_mean = mean(relative_contrast),
     relative_contrast_variance = var(relative_contrast),
@@ -327,14 +322,9 @@ diagnostic_rows <- lapply(split(diagnostic, diagnostic$scenario_id), function(da
       sum(dat$kappa_lower_endpoint, na.rm = TRUE),
     kappa_upper_endpoint_selections =
       sum(dat$kappa_upper_endpoint, na.rm = TRUE),
-    original_kappa_lower_endpoint_selections =
-      sum(dat$original_kappa_lower_endpoint, na.rm = TRUE),
-    original_kappa_upper_endpoint_selections =
-      sum(dat$original_kappa_upper_endpoint, na.rm = TRUE),
     kappa_q25 = quantile(dat$kappa_hat, 0.25, na.rm = TRUE),
     kappa_median = median(dat$kappa_hat, na.rm = TRUE),
     kappa_q75 = quantile(dat$kappa_hat, 0.75, na.rm = TRUE),
-    original_kappa_median = median(dat$original_kappa_hat, na.rm = TRUE),
     solver_warnings = sum(
       dat$full_warning_count + dat$calibration_warning_count +
         dat$cv_warning_count, na.rm = TRUE

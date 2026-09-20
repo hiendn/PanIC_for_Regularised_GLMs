@@ -4,124 +4,107 @@ PanIC-CF confirmatory method lock
 Lock status
 -----------
 
-The statistical method, estimands, margins, and decision rules were fixed
-before any simulation outcome was inspected.  A one-time seed-only re-lock,
-documented below, reserves previously untouched streams for the final
-1,000-replication main and 500-replication grid studies. The frozen numerical
-engine from the preceding release is vendored under
-`reference_implementation/` so that a fresh checkout is self-contained.
+The active method set, literal exact-nonzero rule, primary estimands, margins,
+decision rules, failure policy, and new seed families were fixed before the
+fresh-seed regeneration. This lock does not claim to precede earlier
+exploratory or historical outputs, which are not part of the regenerated
+confirmatory evidence.
 
-Authorized method amendment
----------------------------
+The numerical lineage is retained under `reference_implementation/`. Those
+frozen files provide shared generic primitives and historical auditability;
+they are not an additional assessed implementation and do not override the
+current top-level configuration or method definitions.
 
-The primary PanIC-CF procedure differs from the preceding release only in the
-asymmetric undershoot weight:
+Assessed methods
+----------------
+
+Every main and grid replication has exactly three assessed methods:
+
+1. `PanIC-CF`, using five independently seeded balanced half-splits, both
+   directions per split, the cross-signed target, projection to `[0,20]`, the
+   31-point multiplier grid, and the largest-multiplier one-standard-error
+   stabilization rule;
+2. `CV`, ordinary balanced five-fold cross-validation selecting the smallest
+   radius that attains the minimum mean validation loss; and
+3. `BIC-like`, the family-appropriate active-count criterion on the common
+   full-sample path.
+
+The PanIC-CF undershoot weight is
 
     omega(n_V) = sqrt(log(log(n_V + exp(exp(1))))).
 
-Five independently seeded balanced half-splits, two directions per split, the
-cross-signed target, projection interval, radius grid, multiplier grid,
-largest-multiplier one-standard-error rule, failure default, solver controls,
-and full-data selection rule are unchanged.
+The scenarios, signal construction, independent test size 2,000, radius
+interval `[0,20]`, 121-point primary radius grid, multiplier grid, solver
+controls, and calibration default `kappa=1` are otherwise unchanged.
 
-`PanIC-CF-original` evaluates the preceding log-log weight on the identical
-candidate paths, pilots, targets, and test sample.  It is a labelled
-sensitivity analysis and adds no fitting.  `CV-min` is the preceding ordinary
-minimum-validation-loss five-fold comparator.  `CV-1SE` is secondary: from
-the same five fold-loss curves it selects the smallest radius whose mean loss
-is at most the CV-min mean plus the fold-level standard error at CV-min,
-where SE is the standard deviation of the five fold means divided by sqrt(5).
+Exact support rule
+------------------
+
+Support is defined by the literal fitted coefficient values:
+
+    selected_j = (beta_hat_j != 0).
+
+False positives, false negatives, exact recovery, and total support error all
+use this rule. BIC-like active counts use the same exact nonzero test before
+the cumulative maximum is formed. No post hoc numerical coefficient threshold
+is authorized. The interpolation-radius tolerance remains a solver-accuracy
+check only.
 
 Confirmatory design and decision
 --------------------------------
 
-The final main master seed is 2066091802 and there are 1,000 replications in each of
-the seven unchanged scenarios.  The primary support effect is the equal-weight
-mean across those scenarios of the paired difference
+The main master seed is 2136092001, with 1,000 replications in each of seven
+scenarios. The primary support effect is the equal-weight mean of
 
-    (FP + FN)_PanIC-CF - (FP + FN)_CV-min.
+    (FP + FN)_PanIC-CF - (FP + FN)_CV.
 
 Support superiority passes when its one-sided 95% upper normal Monte Carlo
-bound is below zero.  The prediction guardrail is the equal-weight mean of
+bound is below zero. The prediction endpoint is the equal-weight mean of
 
-    (D_PanIC-CF - D_CV-min) / D_CV-min.
+    (D_PanIC-CF - D_CV) / D_CV.
 
 Prediction noninferiority passes when its one-sided 95% upper normal Monte
-Carlo bound is below the fixed margin 0.001 (0.1%).  A joint claim requires
-complete pairing and both decisions to pass.  Margins 0.0005, 0.0025, and
-0.005 are sensitivity analyses only and cannot change the primary decision.
-Scenario-specific results, PanIC-CF-original, and CV-1SE are secondary.
+Carlo bound is below 0.001. Margins 0.0005, 0.0025, and 0.005 are sensitivity
+summaries only. A joint conclusion requires complete pairing in all seven
+scenarios and both component decisions to pass. Scenario-specific, BIC-like,
+and grid comparisons cannot change the joint decision.
 
-The final v2 grid-sensitivity master seed is 2086091802, with 500 common-
-random-number replications at 61, 121, and 241 radius points.  Dedicated smoke
-mode uses main and grid seeds 2106091802 and 2126091802.  Exact enumeration of
-all training, five calibration-split, CV-fold, and test seeds verifies that
-all four final production/smoke families are pairwise disjoint and disjoint
-from conservative 1,000-replication, seven-scenario supersets for prior or
-retired master seeds 2026091801, 2026091802, 2036091802, 2046091802,
-2056091802, and 2076091802.  It also verifies that every seed remains in R's
-positive integer range.  These checks are part of
-`Implementation_Validation.R` and must pass before either runner starts.
+Every CV denominator in the relative-deviance endpoint must be finite and
+strictly positive. A violation is a hard failure: no replication is removed
+and no denominator is floored or replaced.
 
-Pre-run validation amendment
-----------------------------
+Seed families
+-------------
 
-The first deterministic audit found that three exact-equivalence checks
-compared inherited data-frame row names in addition to the scientific fields.
-The check was corrected to normalize row names before exact field comparison.
-All displayed values and every substantive field already agreed; no method,
-seed, estimand, decision rule, or simulation setting was changed.  This
-amendment occurred before any production simulation was started.
+The grid-sensitivity master seed is 2138092001, with 500 common-random-number
+replications at 61, 121, and 241 radius points. Dedicated smoke mode uses main
+and grid seeds 2140092001 and 2142092001.
 
-The all-setting smoke pipeline then exposed a packaging-only issue: its table
-caption and pairing-completeness flag used the locked production count rather
-than the run-specific count recorded in `configuration.csv`.  Output analysis
-was changed to read that recorded count.  This changes no production value
-(both counts are 1,000 in the locked run), and no method or decision rule.
-The independent verifier received the corresponding run-count correction so
-that non-production smoke archives are assessed against their own recorded
-replication count; the locked production check remains 1,000.
+The non-overlap audit includes the following prior or retired families:
 
-That smoke run had consumed replications 1--2 of the then-candidate main seed
-2056091802, and the grid smoke used 2076091802.  No statistical setting was
-changed in response.  Nevertheless, to make the final seeds literally
-uninspected, a one-time seed-only re-lock retired both seeds, added them to the
-exclusion audit, and fixed 2066091802 and 2086091802 for production.  The
-runners now reject every reduced-replication use of a production seed and
-substitute 2106091802 and 2126091802 only when `--smoke` is explicit.  The
-partial old candidate output directory contained only configuration, registry,
-and lock files; no scenario completed there. The full audit trail is described
-in `PROVENANCE.md`.
+    2026091801  2026091802  2036091802  2046091802  2056091802
+    2066091802  2076091802  2086091802  2106091802  2126091802
 
-The manuscript-facing output layer maps the internal method identifier
-`BIC-active (exploratory)` to the reader-facing label `BIC-like`.  Its primary
-table caption states that the logistic and Poisson rows are exploratory
-active-count analogues outside the Gaussian proposition.  Internal process
-phrases such as “second-confirmation” and “revised PanIC-CF” were removed from
-reader-facing captions.  Internal identifiers and statistical calculations
-are unchanged, and the independent verifiers enforce these presentation
-requirements.
+It enumerates training, five calibration-split, CV-fold, and test streams;
+checks pairwise separation of the four new production/smoke families; checks
+separation from conservative supersets of every prior family; and verifies
+that all seeds remain in R's positive integer range. Smoke mode cannot write
+to the committed results directory or consume a production seed.
 
-Post-production presentation and verification amendment
--------------------------------------------------------
+Failure and output contract
+---------------------------
 
-The 2026-09-20 release makes the manuscript self-contained with respect to
-tables.  Seven complete table floats are embedded in `manuscript/main.tex`;
-the files under `results/table_*.tex` are deterministic, checksum-controlled
-mirrors rather than LaTeX inputs.  A common renderer now generates all seven
-mirrors, and independent checks compare both the mirrors and the embedded
-blocks byte-for-byte.  This refactoring changes no fitted path, random stream,
-summary value, estimand, threshold, or decision.
+A full-path failure marks all three method rows failed. A calibration-only
+failure uses the prespecified multiplier default and records both flags. A CV
+fold failure marks the CV row failed. No failed estimate is silently replaced.
 
-The same release makes an implicit domain requirement for the relative
-test-deviance contrast explicit: every paired CV-min denominator must be
-finite and strictly positive.  A violation is a hard failure; no observation
-is deleted and no denominator is floored or replaced.  The retained 7,000
-paired production rows satisfy this condition.  Their scenario-level ranges
-and empirical contrast moments are recorded in
-`relative_deviance_denominator_audit.csv` and independently reconstructed from
-the raw rows.  This is a verification amendment to the already fixed estimand,
-not a change to the statistical procedure or reported numerical results.
+The main raw output has three method rows per replication. The compact release
+retains the PanIC-CF/CV endpoint rows, the denominator audit, all three pairwise
+method comparisons, calibration diagnostics, and three-method grid summaries.
+The primary performance table reports selected radius and signed
+attained-radius error without repeating attained radius; the calibration table
+leaves sparse operational counts to diagnostics and prose; and the grid table
+omits runtime. These are presentation choices, not changes to estimands.
 
 Locked critical sources
 -----------------------
@@ -129,24 +112,24 @@ Locked critical sources
 537d3cd266dd880453d194de9c03a7cbbbcdbaa7352f0b197886818d0dd97a5e  reference_implementation/config.R
 9128cd0112cd3c679fef5d5601c22a4232293e2c38a9dae7e7caa6d2f3762c68  reference_implementation/path_functions.R
 5df27ca79d5da1e7440b6c7b23874bdbdf62772fd02680fe9822136be8ffe568  reference_implementation/revised_cf_functions.R
-d485eaff44af6ea7359e8deda02db456ea08c160d4c661695b66312bea316d96  Simulation_Config.R
-ad37f09ea27711215cce986e3d202a38171907532438b30d75c9a0c6b5987bd4  Auxiliary_Config.R
-073527683e2c1a6c143b71ea0253b1831cc870fba3e5da507bc600ebaf4775d7  PanIC_CF_Functions.R
-fb96556c3333eedc3c5fe0c6848cb159eedc07f654e76320e61abc749fdfb671  Auxiliary_Simulation_Functions.R
+f2aa99d0cf0e757094ded5dfb82acae9ddc9d1f68d6597c05d50bf955452564f  Simulation_Config.R
+13c5ea17482470a8c58c9b7de0e405f3747bbdbb5f306137123cf837fb5c8d32  Auxiliary_Config.R
+5a1bbb20a6dc2dc0cec5a04caa2d90c2d99134e5aafa70f44a5861c8879ed090  PanIC_CF_Functions.R
+983439b550a1fe05e33b2d9b2b56e2919167832af67659e882f1f4e792f839f3  Auxiliary_Simulation_Functions.R
 3ab67344c6e89c24fcc04d47d2adc1439c3a685cb9048d87052709759564583f  Method_Lock_Verification.R
-2237446bbe7b962a1219e8fbc0cbd281592bbb34e013fadda2fedb8484febe4f  Implementation_Validation.R
-f40bc8a24679024fbc80b341939c1aa52176741be4ec38177683b04f5e32095c  Run_Confirmatory_Simulations.R
-f6826c229fc66f74f1628b135a39a2b4bb862211573e275bbf303bb419908064  Simulation_Results_Analysis.R
-b484eff6b7b6906da99ffa6a17298ec6331f455fcbc86ae88af22df25e82317a  Results_Verification.R
+ba6fd9263baffd01e19fbc1de7cb769e42cbd38116ed7194b98f896dc8847420  Implementation_Validation.R
+7c6560f0e26bc41c77d748659de3f947d2a8cd27d6e15b9bd7702b3e7156b44c  Run_Confirmatory_Simulations.R
+ca0f44fd83d8b622aa0cd24496372deb6dba3bc144f22b806cdd4a19fd636a60  Simulation_Results_Analysis.R
+df71a2de035686ea41cc4d13ea2b14698b052a0245c4c18febae9c94b5bed8df  Results_Verification.R
 4254a8908dca3e1294a2edb7f82c1dc2c2bfcb01b1ae982ac671bccb3a392ba3  Simulation_Study.R
-b39cd705819370e361d5a27d9eef912afbafd635817d65b578cedcc3a8f9b194  Grid_Sensitivity_Study.R
-728fdd257d43522294d979aa4a86e2b1b4132db035306759791138d8ea4bb0da  Grid_Results_Verification.R
+b6362924386fa20f4187f735304eb50ff4594d66a185a8ad7afd2e7ead2cace5  Grid_Sensitivity_Study.R
+47ce3da584031588b83402e2b5f512b3f1a0cb5d45d2c4ed0892e2418300f77d  Grid_Results_Verification.R
 787060f62b07b0b9d3b70c990fee1f9a5ddec464fe937e9ec36988aa25a23cec  Grid_Sensitivity_Pipeline.R
 683b4daed1d1453cbbfd7dadc0e450e63f7cb306e1377b70d0c10309b403b467  Boundary_Subsampling_Study.R
-24c0383018e605ca5c6ec51b0055460d5c54215e242a3fac449f346571df43be  Solver_Validation.R
-96e8c30aa29c200fb87693af727e8721d2e3d79730f553327ae24cbe3f039607  Runtime_Benchmark.R
-44ba9c99814ba5c115b0bd84a1a87809cf09bc50f21818271e7302c0440ad05a  Render_Runtime_Figure.R
-268a30dd2489e5872bb046906aa1ae7d4ae6208f33672d0468afa51f726716e5  Manuscript_Table_Rendering.R
+79bdbdc8fbc8ea692a31fbef587e22d3708408c4e7ce1c3c8637d76fa1f0adfb  Solver_Validation.R
+de428aabf475fc2b4354a2c1fdfea553592f2f817fd5595abb6f5fca13a78793  Runtime_Benchmark.R
+9d039e547afa7c99244bdaad1d72dd6b809aa15ba5c814f3fe12391f71b0208f  Render_Runtime_Figure.R
+ddc6fc53c6bb68997e26c6bf2aee4b95ee6cb1362a79a67e566c3d5f0acdb6b2  Manuscript_Table_Rendering.R
 eb0c410777a5bf1f4e7280ea8fd48603691d5771a3bc38fd3dc3ff2ab91dfc27  Render_Manuscript_Tables.R
 06c5d103f260b50610775e3e51d782679b2d86ca90c8dccd07dc4193b2ff2767  Manuscript_Table_Tools.R
-58be163cfb89eb0ed0eacad7a63c62f0a058f47a7182535f527d38d5786dfa9d  Repository_Verification.R
+5c8111bbef5d0fa84a85d44bfb65cbe734ace8b458a37362f417a5aab96e3ea7  Repository_Verification.R

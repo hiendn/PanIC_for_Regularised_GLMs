@@ -73,8 +73,7 @@ if (seed_role == "production") {
 }
 
 method_order <- c(
-  "PanIC-CF", CONFIG$original_sensitivity_method, "BIC-like",
-  CONFIG$primary_cv_method, CONFIG$secondary_cv_method
+  "PanIC-CF", "BIC-like", CONFIG$primary_cv_method
 )
 calibration_by_grid <- list()
 primary_by_grid <- list()
@@ -90,7 +89,7 @@ for (m in CONFIG$grid_sensitivity_points) {
   calibration_by_grid[[as.character(m)]] <- calibration
   primary_by_grid[[as.character(m)]] <- primary
   diagnostic_by_grid[[as.character(m)]] <- diagnostic
-  assert(nrow(primary) == 5L * n_rep,
+  assert(nrow(primary) == 3L * n_rep,
          paste0("m=", m, ": primary row count mismatch"))
   assert(nrow(diagnostic) == n_rep,
          paste0("m=", m, ": diagnostic row count mismatch"))
@@ -100,26 +99,13 @@ for (m in CONFIG$grid_sensitivity_points) {
     split(primary$method, primary$replication),
     function(methods) setequal(methods, method_order), logical(1)
   )), paste0("m=", m, ": method set mismatch"))
-  cv_min <- primary[primary$method == CONFIG$primary_cv_method, ]
-  cv_one_se <- primary[primary$method == CONFIG$secondary_cv_method, ]
-  ok <- cv_min$method_failed == 0L & cv_one_se$method_failed == 0L
-  assert(all(
-    cv_one_se$selected_grid_radius[ok] <=
-      cv_min$selected_grid_radius[ok] + 1e-14
-  ), paste0("m=", m, ": CV-1SE radius exceeds CV-min"))
   expected_weight <- sqrt(log(log(
     calibration$n_validation + exp(exp(1))
   )))
-  expected_original <- log(log(
-    calibration$n_validation + exp(exp(1))
-  ))
   target_ok <- is.finite(calibration$raw_cross_signed_radius)
   assert(max(abs(
     calibration$weight[target_ok] - expected_weight[target_ok]
-  )) < 1e-12, paste0("m=", m, ": revised weight mismatch"))
-  assert(max(abs(
-    calibration$original_weight[target_ok] - expected_original[target_ok]
-  )) < 1e-12, paste0("m=", m, ": original weight mismatch"))
+  )) < 1e-12, paste0("m=", m, ": calibration weight mismatch"))
 }
 
 reference <- calibration_by_grid[["121"]]
@@ -132,7 +118,7 @@ for (m in c("61", "241")) {
          paste0("m=", m, ": common-random-number pairing incomplete"))
   for (field in c(
     "training_seed", "split_seed", "test_seed", "raw_cross_signed_radius",
-    "weight", "original_weight"
+    "weight"
   )) {
     lhs <- pair[[paste0(field, "_reference")]]
     rhs <- pair[[paste0(field, "_candidate")]]
@@ -144,12 +130,12 @@ for (m in c("61", "241")) {
 summary <- read_result("grid_sensitivity_summary.csv")
 grid_contrasts <- read_result("grid_sensitivity_paired_contrasts.csv")
 method_contrasts <- read_result("grid_sensitivity_method_contrasts.csv")
-assert(nrow(summary) == 15L,
-       "Grid summary must contain five methods on three grids")
-assert(nrow(grid_contrasts) == 15L,
-       "Grid paired table must contain five methods and three grid pairs")
-assert(nrow(method_contrasts) == 12L,
-       "Grid method table must contain four comparisons on three grids")
+assert(nrow(summary) == 9L,
+       "Grid summary must contain three methods on three grids")
+assert(nrow(grid_contrasts) == 9L,
+       "Grid paired table must contain three methods and three grid pairs")
+assert(nrow(method_contrasts) == 9L,
+       "Grid method table must contain three comparisons on three grids")
 assert(all(summary$attempted_replications == n_rep),
        "Grid summary replication count mismatch")
 

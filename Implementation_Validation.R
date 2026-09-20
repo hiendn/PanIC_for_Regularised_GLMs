@@ -29,25 +29,27 @@ sys.source(
 prior_config <- prior_env$CONFIG
 common_fields <- intersect(names(prior_config), names(CONFIG))
 changed_common_fields <- common_fields[!vapply(common_fields, function(name) {
-  isTRUE(all.equal(prior_config[[name]], CONFIG[[name]],
-                   check.attributes = TRUE))
+  identical(prior_config[[name]], CONFIG[[name]])
 }, logical(1))]
 add_check(
   "only authorized prior-configuration fields changed",
-  identical(sort(changed_common_fields), sort(c("master_seed", "n_rep"))),
+  identical(
+    sort(changed_common_fields),
+    sort(c("active_tolerance", "master_seed", "n_rep"))
+  ),
   paste(changed_common_fields, collapse = ",")
 )
 add_check(
-  "second-confirmation replication count is locked",
+  "confirmatory replication count is locked",
   identical(CONFIG$n_rep, 1000L),
   paste0("n_rep=", CONFIG$n_rep)
 )
 add_check(
   "production and dedicated-smoke master seeds are locked",
-  identical(CONFIG$master_seed, 2066091802L) &&
-    identical(CONFIG$grid_sensitivity_master_seed, 2086091802L) &&
-    identical(CONFIG$smoke_master_seed, 2106091802L) &&
-    identical(CONFIG$smoke_grid_sensitivity_master_seed, 2126091802L),
+  identical(CONFIG$master_seed, 2136092001L) &&
+    identical(CONFIG$grid_sensitivity_master_seed, 2138092001L) &&
+    identical(CONFIG$smoke_master_seed, 2140092001L) &&
+    identical(CONFIG$smoke_grid_sensitivity_master_seed, 2142092001L),
   paste0(
     "main=", CONFIG$master_seed, ";grid=",
     CONFIG$grid_sensitivity_master_seed, ";smoke_main=",
@@ -149,7 +151,6 @@ add_check(
 )
 
 weight_250 <- calibration_weight(250L)
-original_weight_250 <- original_calibration_weight(250L)
 weight_large <- calibration_weight(1000000L)
 add_check(
   "primary calibration weight matches locked square-root log-log formula",
@@ -157,13 +158,6 @@ add_check(
     weight_250, sqrt(log(log(250 + exp(exp(1)))))
   )),
   sprintf("omega_250=%.12f", weight_250)
-)
-add_check(
-  "same-path original sensitivity retains the log-log formula",
-  isTRUE(all.equal(
-    original_weight_250, log(log(250 + exp(exp(1))))
-  )) && isTRUE(all.equal(weight_250^2, original_weight_250)),
-  sprintf("original_omega_250=%.12f", original_weight_250)
 )
 add_check(
   "primary calibration weight has the required qualitative rates",
@@ -175,12 +169,32 @@ cv_loss_test <- cbind(
   rep(1.1, 5L), rep(1.005, 5L),
   c(0.98, 0.99, 1.00, 1.01, 1.02), rep(1.02, 5L)
 )
-cv_rule_test <- select_cv_min_and_one_se(cv_loss_test, 0:3)
+cv_rule_test <- select_cv(cv_loss_test, 0:3)
 add_check(
-  "CV-min selects the smallest minimum and CV-1SE the smallest eligible radius",
-  cv_rule_test$min_index == 3L && cv_rule_test$one_se_index == 2L,
-  paste0("min_index=", cv_rule_test$min_index,
-         ";one_se_index=", cv_rule_test$one_se_index)
+  "CV selects the smallest minimum-loss radius",
+  cv_rule_test$index == 3L,
+  paste0("selected_index=", cv_rule_test$index)
+)
+
+literal_support_test <- support_metrics(
+  c(1, 1e-12, 0),
+  list(support = c(TRUE, FALSE, FALSE), true_radius = 1)
+)
+add_check(
+  "support uses literal fitted nonzeros without a numerical threshold",
+  literal_support_test$fp == 1L && literal_support_test$fn == 0L &&
+    literal_support_test$wrong == 1L,
+  paste0("fp=", literal_support_test$fp, ";fn=", literal_support_test$fn)
+)
+add_check(
+  "BIC-like active counts use literal fitted nonzeros",
+  identical(
+    as.integer(colSums(
+      matrix(c(0, 1e-12, 0, 0, 1, -1e-15), nrow = 2L) != 0
+    )),
+    c(1L, 0L, 2L)
+  ),
+  "synthetic active counts are 1,0,2"
 )
 
 production_master_seed <- CONFIG$master_seed
@@ -197,19 +211,12 @@ add_check(
   paste(names(table(assignment)), table(assignment), collapse = ";")
 )
 
-## End-to-end check against the prior implementation on the identical data.
-## The prior log-log method and CV-min must agree exactly; the revised method
-## differs only through its scoring weight and adds no fit for either
-## sensitivity comparator.
+## End-to-end determinism check and a selection-only comparison with ordinary
+## CV from the preceding implementation on identical data.
 scenario <- SCENARIOS[1L, , drop = FALSE]
 candidate_fit_1 <- run_candidate_replication(scenario, 1L, 1L)
 candidate_fit_2 <- run_candidate_replication(scenario, 1L, 1L)
-candidate_weight_function <- calibration_weight
-calibration_weight <- function(n_validation, config = CONFIG) {
-  original_calibration_weight(n_validation)
-}
 prior_fit <- run_revised_replication(scenario, 1L, 1L)
-calibration_weight <- candidate_weight_function
 
 diagnostic_columns <- setdiff(
   names(candidate_fit_1$diagnostic), "elapsed_seconds"
@@ -229,68 +236,42 @@ add_check(
   "two executions with identical explicit streams agree"
 )
 expected_methods <- c(
-  "PanIC-CF", CONFIG$original_sensitivity_method, "BIC-like",
-  CONFIG$primary_cv_method, CONFIG$secondary_cv_method
+  "PanIC-CF", "BIC-like", CONFIG$primary_cv_method
 )
 add_check(
-  "complete replication contains all locked primary and sensitivity methods",
+  "complete replication contains exactly the three assessed methods",
   identical(candidate_fit_1$primary$method, expected_methods) &&
     all(candidate_fit_1$primary$method_failed == 0L),
   paste(candidate_fit_1$primary$method, collapse = ",")
 )
 
-compare_evaluation <- function(candidate_method, prior_method) {
-  lhs <- candidate_fit_1$primary[
-    candidate_fit_1$primary$method == candidate_method, , drop = FALSE
-  ]
-  rhs <- prior_fit$primary[
-    prior_fit$primary$method == prior_method, , drop = FALSE
-  ]
-  lhs$method <- prior_method
-  row.names(lhs) <- NULL
-  row.names(rhs) <- NULL
-  isTRUE(all.equal(lhs, rhs, check.attributes = TRUE))
-}
 add_check(
-  "same-path original PanIC sensitivity reproduces prior PanIC exactly",
-  compare_evaluation(CONFIG$original_sensitivity_method, "PanIC-CF"),
-  "all retained replication-level evaluation fields agree"
-)
-add_check(
-  "CV-min reproduces the prior ordinary CV result exactly",
-  compare_evaluation(CONFIG$primary_cv_method, "CV"),
-  "all retained replication-level evaluation fields agree"
-)
-add_check(
-  "unchanged BIC-like comparator reproduces the prior result exactly",
-  compare_evaluation("BIC-like", "BIC-like"),
-  "all retained replication-level evaluation fields agree"
-)
-add_check(
-  "CV-1SE is no less regularized than CV-min",
-  candidate_fit_1$diagnostic$cv_one_se_index <=
-    candidate_fit_1$diagnostic$cv_min_index &&
-    candidate_fit_1$primary$selected_grid_radius[
-      candidate_fit_1$primary$method == CONFIG$secondary_cv_method
-    ] <= candidate_fit_1$primary$selected_grid_radius[
-      candidate_fit_1$primary$method == CONFIG$primary_cv_method
-    ],
-  paste0(
-    "indices=", candidate_fit_1$diagnostic$cv_one_se_index, "<=",
-    candidate_fit_1$diagnostic$cv_min_index
-  )
-)
-add_check(
-  "ten shared calibration rows retain both weight formulas",
-  nrow(candidate_fit_1$calibration) == 10L &&
-    all(abs(
-      candidate_fit_1$calibration$weight^2 -
-        candidate_fit_1$calibration$original_weight
-    ) < 1e-12) &&
+  "CV preserves the preceding ordinary minimum-loss selection",
+  {
+    candidate_cv <- candidate_fit_1$primary[
+      candidate_fit_1$primary$method == CONFIG$primary_cv_method,
+    ]
+    prior_cv <- prior_fit$primary[prior_fit$primary$method == "CV", ]
     isTRUE(all.equal(
-      candidate_fit_1$calibration$original_weight,
-      prior_fit$calibration$weight,
-      check.attributes = FALSE
+      candidate_cv$selected_grid_radius,
+      prior_cv$selected_grid_radius,
+      tolerance = 1e-12
+    )) && isTRUE(all.equal(
+      candidate_cv$test_deviance, prior_cv$test_deviance,
+      tolerance = 1e-12
+    ))
+  },
+  "selected radius and test deviance agree on identical data and folds"
+)
+add_check(
+  "ten calibration rows retain the square-root log-log weight",
+  nrow(candidate_fit_1$calibration) == 10L &&
+    isTRUE(all.equal(
+      candidate_fit_1$calibration$weight,
+      sqrt(log(log(
+        candidate_fit_1$calibration$n_validation + exp(exp(1))
+      ))),
+      tolerance = 1e-12, check.attributes = FALSE
     )),
   paste0("rows=", nrow(candidate_fit_1$calibration))
 )

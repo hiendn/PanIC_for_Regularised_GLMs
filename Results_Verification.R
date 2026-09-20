@@ -67,11 +67,7 @@ assert(all(validation$passed == 1L),
        "A deterministic implementation check failed")
 
 expected_methods <- function(family) {
-  c(
-    "PanIC-CF", CONFIG$original_sensitivity_method,
-    if (family == "gaussian") "BIC-like" else "BIC-active (exploratory)",
-    CONFIG$primary_cv_method, CONFIG$secondary_cv_method
-  )
+  c("PanIC-CF", "BIC-like", CONFIG$primary_cv_method)
 }
 all_primary <- list()
 all_diagnostics <- list()
@@ -86,16 +82,16 @@ for (scenario_index in seq_len(nrow(SCENARIOS))) {
   all_diagnostics[[id]] <- diagnostic
   all_calibration[[id]] <- calibration
 
-  assert(nrow(primary) == 5L * n_rep,
-         paste0(id, ": expected five method rows per replication"))
+  assert(nrow(primary) == 3L * n_rep,
+         paste0(id, ": expected three method rows per replication"))
   assert(nrow(diagnostic) == n_rep,
          paste0(id, ": diagnostic row count mismatch"))
   assert(nrow(calibration) == 10L * n_rep,
          paste0(id, ": calibration row count mismatch"))
   assert(identical(sort(unique(diagnostic$replication)), seq_len(n_rep)),
          paste0(id, ": incomplete replication sequence"))
-  assert(all(table(primary$replication) == 5L),
-         paste0(id, ": a replication does not contain five methods"))
+  assert(all(table(primary$replication) == 3L),
+         paste0(id, ": a replication does not contain three methods"))
   assert(all(vapply(
     split(primary$method, primary$replication),
     function(methods) setequal(methods, expected_methods(family)),
@@ -109,44 +105,22 @@ for (scenario_index in seq_len(nrow(SCENARIOS))) {
     expected_primary_weight <- sqrt(log(log(
       calibration$n_validation[ok_target] + exp(exp(1))
     )))
-    expected_original_weight <- log(log(
-      calibration$n_validation[ok_target] + exp(exp(1))
-    ))
     assert(max(abs(
       expected_primary_weight - calibration$weight[ok_target]
-    )) < 1e-12, paste0(id, ": revised weight mismatch"))
-    assert(max(abs(
-      expected_original_weight - calibration$original_weight[ok_target]
-    )) < 1e-12, paste0(id, ": original sensitivity weight mismatch"))
+    )) < 1e-12, paste0(id, ": calibration weight mismatch"))
   }
 
   pan <- primary[primary$method == "PanIC-CF", ]
-  original <- primary[
-    primary$method == CONFIG$original_sensitivity_method,
-  ]
-  cv_min <- primary[primary$method == CONFIG$primary_cv_method, ]
-  cv_one_se <- primary[primary$method == CONFIG$secondary_cv_method, ]
-  assert(all(pan$calibration_failed == diagnostic$calibration_failed) &&
-           all(original$calibration_failed == diagnostic$calibration_failed),
+  cv <- primary[primary$method == CONFIG$primary_cv_method, ]
+  assert(all(pan$calibration_failed == diagnostic$calibration_failed),
          paste0(id, ": calibration failure flag mismatch"))
-  assert(all(pan$default_used == diagnostic$default_used) &&
-           all(original$default_used == diagnostic$default_used),
+  assert(all(pan$default_used == diagnostic$default_used),
          paste0(id, ": calibration default flag mismatch"))
-  assert(all(cv_min$method_failed == diagnostic$cv_failed) &&
-           all(cv_one_se$method_failed == diagnostic$cv_failed),
+  assert(all(cv$method_failed == diagnostic$cv_failed),
          paste0(id, ": CV failure flag mismatch"))
-  cv_ok <- cv_min$method_failed == 0L & cv_one_se$method_failed == 0L
-  assert(all(
-    cv_one_se$selected_grid_radius[cv_ok] <=
-      cv_min$selected_grid_radius[cv_ok] + 1e-14
-  ), paste0(id, ": CV-1SE selected a radius above CV-min"))
-  assert(all(
-    diagnostic$cv_one_se_index[diagnostic$cv_failed == 0L] <=
-      diagnostic$cv_min_index[diagnostic$cv_failed == 0L]
-  ), paste0(id, ": CV index ordering mismatch"))
 
   good_path <- diagnostic$full_path_failed == 0L
-  for (column in c("kappa_hat", "original_kappa_hat")) {
+  for (column in "kappa_hat") {
     on_grid <- vapply(diagnostic[[column]][good_path], function(value) {
       min(abs(value - CONFIG$kappa_grid)) < 1e-12
     }, logical(1))
@@ -178,10 +152,10 @@ paired <- read_result("paired_method_contrasts.csv")
 scenario_estimands <- read_result("scenario_primary_estimands.csv")
 decision <- read_result("confirmatory_decision.csv")
 sensitivity <- read_result("prediction_margin_sensitivity.csv")
-assert(nrow(simulation_summary) == 35L,
-       "Simulation summary must contain five methods in seven scenarios")
-assert(nrow(paired) == 42L,
-       "Paired summary must contain six comparisons in seven scenarios")
+assert(nrow(simulation_summary) == 21L,
+       "Simulation summary must contain three methods in seven scenarios")
+assert(nrow(paired) == 21L,
+       "Paired summary must contain three comparisons in seven scenarios")
 assert(nrow(scenario_estimands) == 7L && nrow(decision) == 1L,
        "Confirmatory estimand outputs have the wrong dimensions")
 assert(nrow(sensitivity) == 4L && sum(sensitivity$role == "primary") == 1L,
@@ -298,12 +272,12 @@ for (i in seq_len(nrow(SCENARIOS))) {
     n = SCENARIOS$n[i],
     rho = SCENARIOS$rho[i],
     paired_replications = nrow(pair),
-    nonfinite_cv_min_test_deviances = sum(!is.finite(denominator)),
-    nonpositive_cv_min_test_deviances = sum(
+    nonfinite_cv_test_deviances = sum(!is.finite(denominator)),
+    nonpositive_cv_test_deviances = sum(
       is.finite(denominator) & denominator <= 0
     ),
-    minimum_cv_min_test_deviance = min(denominator),
-    maximum_cv_min_test_deviance = max(denominator),
+    minimum_cv_test_deviance = min(denominator),
+    maximum_cv_test_deviance = max(denominator),
     nonfinite_relative_contrasts = sum(!is.finite(prediction_delta)),
     relative_contrast_mean = mean(prediction_delta),
     relative_contrast_variance = var(prediction_delta),
@@ -416,12 +390,6 @@ support_table_text <- paste(readLines(
 assert(!grepl("BIC-active \\(exploratory\\)", support_table_text) &&
          grepl("BIC-like", support_table_text),
        "Reader-facing BIC-like labels were not normalized")
-assert(grepl(
-  "active-count comparator", support_table_text, fixed = TRUE
-) && grepl(
-  "logistic and Poisson rows are exploratory analogues outside the scope",
-  support_table_text, fixed = TRUE
-), "The non-Gaussian BIC-like qualification is missing")
 assert(!grepl(
   "second-confirmation|revised PanIC-CF", support_table_text,
   ignore.case = TRUE

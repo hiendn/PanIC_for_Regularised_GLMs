@@ -152,7 +152,7 @@ environment_lines <- c(
   paste0("Matrix version: ", as.character(packageVersion("Matrix"))),
   paste0("BLAS: ", extSoftVersion()[["BLAS"]]),
   paste0("Requested simulation workers: ", CONFIG$requested_cores),
-  paste0("Active-set tolerance: ", format(CONFIG$active_tolerance, scientific = TRUE)),
+  "Support definition: beta_hat != 0 (literal fitted nonzero)",
   paste0("glmnet convergence threshold: ", format(CONFIG$glmnet_threshold, scientific = TRUE)),
   paste0("glmnet maximum iterations: ", CONFIG$glmnet_maxit),
   paste0("glmnet path points requested: ", CONFIG$glmnet_nlambda),

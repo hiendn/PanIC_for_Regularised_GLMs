@@ -17,7 +17,6 @@ CONFIG <- list(
   sensitivity_radius_points = c(61L, 121L, 241L),
   kappa_grid = 10^seq(-2, 2, length.out = 31L),
   folds = 5L,
-  active_tolerance = 1e-8,
   bic_epsilon = 1e-6,
   glmnet_nlambda = 300L,
   glmnet_lambda_min_ratio = 1e-6,

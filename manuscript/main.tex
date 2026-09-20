@@ -34,8 +34,6 @@
 \usepackage{caption}
 \usepackage{orcidlink}
 \usepackage[authoryear]{natbib}
-% \usepackage{appendix}
-% \bibliographystyle{elsarticle-num}
 \addtolength{\oddsidemargin}{-.5in}%
 \addtolength{\evensidemargin}{-1in}%
 \addtolength{\textwidth}{1in}%
@@ -59,7 +57,6 @@
   }%
 }
 
-%\newcommand{\Bar}[1]{\bar{#1}}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{proposition}{Proposition}
@@ -85,18 +82,18 @@ Email: h.nguyen5@latrobe.edu.au}
 \doublespacing
 \section*{Abstract}
 \begin{bluechange}
-Many problems in statistics and machine learning can be formulated as model selection problems, where the goal is to choose an optimal parsimonious model from a set of candidates. Information criteria (ICs) address this task by penalising empirical fit according to model complexity. We specialise the PanIC framework for IC-based model selection to constrained generalised linear models (GLMs) and give verifiable sufficient conditions for consistent selection of the smallest risk-optimal constraint level. We establish consistency for deterministic continuum-indexed nested families and a transfer result for possibly data-dependent finite candidate sets under an explicit one-sided coverage condition. For regularised linear least squares, we give a Bayesian information criterion (BIC)-like construction and fixed-threshold second-order limit laws, including non-Gaussian boundary limits, together with a subsampling approximation for scalar projections of those limits. We also give a data-dependent calibration rule for the PanIC multiplier and demonstrate the procedures through simulations.
+We specialise the PanIC framework for information-criterion selection in constrained generalised linear models (GLMs) and give verifiable sufficient conditions for consistent selection of the smallest risk-optimal constraint level. We establish consistency for deterministic continuum-indexed nested families and a transfer result for possibly data-dependent finite candidate sets under an explicit one-sided coverage condition. For regularised linear least squares, we give a Bayesian information criterion (BIC)-like construction and fixed-threshold second-order limit laws, including non-Gaussian boundary limits, together with a subsampling approximation for scalar projections of those limits. We also give a data-dependent calibration rule for the PanIC multiplier and demonstrate the procedures through simulations.
 \end{bluechange}
 
 \noindent \textbf{Keywords}: Information criteria; model selection; generalised linear models; least absolute shrinkage and selection operator; regularisation; asymptotic theory
 
 
 \section{Introduction}
-Model selection criteria trade off a candidate model's fit to the observed data against its complexity. Archetypal examples are the Akaike Information Criterion (AIC; \citealt{akaike_new_1974}) and the Bayesian Information Criterion (BIC; \citealt{schwarz_estimating_1978}), which are among the earliest proposed criteria and remain widely used. Detailed expositions on model selection can be found in \cite{mcquarrie_regression_1998}, \cite{vapnik_statistical_1998}, \cite{vapnik_nature_2000}, \cite{claeskens_model_2001}, and \cite{buhlmann_statistics_2011}.
+Information criteria balance empirical fit against model complexity. Classical examples include AIC \citep{akaike_new_1974} and BIC \citep{schwarz_estimating_1978}; see \citet{mcquarrie_regression_1998} and \citet{buhlmann_statistics_2011} for broader accounts.
 
 Our study focuses on model selection schemes with consistency guarantees. The work of \cite{sin_information_1996} provides consistency results for a broad class of ICs for generic loss-based learning problems, but its theorems impose conditions on the objective and candidate models that can be difficult to verify. In \cite{nguyen_panic:_2023}, those criteria are studied further for generic risk-minimisation problems, yielding the model-selection framework that we call PanIC. The name uses the Greek prefix ``pan'', meaning ``all'' or ``of everything''. Like \cite{baudry2015estimation}, the PanIC and \cite{sin_information_1996} results allow generic loss functions, whereas the following works use a negative log-likelihood \citep{leroux_consistent_1992, hui_order_2015} or a negative composite, pseudo, or quasi log-likelihood \citep{varin_note_2005, gao_composite_2010, ng_model_2014, hui_use_2021}.
 
-In this work, we seek to specialise and refine the PanIC framework towards consistent estimation methods for general regression problems. Consistency conditions for parameter estimators and minimal risks of regression problems under the empirical risk minimisation (ERM) approach are well established and can be found, for example, in \cite{vapnik_statistical_1998}, \cite{vapnik_nature_2000}, and \cite{shapiro_lectures_2021}. However, selecting model complexity solely according to the ERM principle tends to produce models that overfit the data. This fact has been widely recognised in the literature and has motivated the broad study of regularisation techniques. Examples of such methods include $l_2$ regularisation, leading to the Ridge regression problem \citep{hoerl_ridge_1970}; $l_1$ regularisation, leading to the Lasso problem \citep{tibshirani_regression_1996}; and a convex combination of $l_2$ and $l_1$ penalties, leading to the elastic-net problem \citep{zou_regularization_2005}. Results regarding the consistency of estimators obtained from solving such regularisation problems, and others, can be found, for example, in \cite{zhao_model_2006}, \cite{yuan_non-negative_2007}, \cite{jia_model_2010}, and \cite{hastie_statistical_2015}.
+\blue{We specialise the PanIC framework to constrained regression. Consistency of an empirical-risk minimiser within a fixed regression model does not determine the appropriate constraint level. Across a nested constraint family, empirical risk alone favours the largest candidate, which motivates information-criterion selection of the constraint level. We consider Ridge, Lasso, and Elastic-net constraints \citep{hoerl_ridge_1970,tibshirani_regression_1996,zou_regularization_2005}.}
 
 \begin{bluechange}
 Recent works have also considered structured high-dimensional regression in which structural or target parameters and nuisance or incidental parameters are regularised differently. For instance, \citet{drikvandi2025} develops smooth and nonsmooth shrinkage procedures for settings with specified or unspecified parameters of interest. Relatedly, \citet{fan_tang_shi_2018} studies a finite-dimensional vector of structural parameters together with a high-dimensional vector of sparse incidental parameters, obtaining consistency and asymptotic normality for the structural-parameter estimators but only partial selection consistency for the incidental parameters. These objectives and asymptotic regimes differ from our fixed-dimensional target of selecting a constraint level in a nested GLM family.
@@ -105,17 +102,15 @@ To address the consistency of regularised regression problems, we extend the Pan
 \begin{enumerate}
     \item We verify sufficient conditions for PanIC consistency in linear, logistic, Poisson, and Gamma regression. For Gamma regression, we also allow the shape parameter to be estimated jointly on a fixed compact interval bounded away from zero.
     \item We establish first-order consistency for deterministic continuum-indexed nested families. We further show that a finite random candidate set, including one constructed from the data, inherits threshold consistency when it contains a candidate approaching the population-optimal threshold from above and the penalty has the required fixed-separation rate.
-    \item We give a finite-sample implementation and a support-free, repeated-split cross-signed radius rule for the PanIC multiplier. A pointwise fixed-dimensional result establishes the root-sample-size rate of the cross-signed $L_1$ target, while uniformity over a fixed positive compact multiplier range ensures that calibration does not alter the first-order consistency target. A numerical study evaluates the rule in independent and correlated Gaussian and logistic designs and in a Poisson design, separately reporting constraint-radius, support-recovery, predictive, calibration, grid, solver, and runtime diagnostics.
+    \item We give a finite-sample implementation and a repeated-split cross-signed radius rule for the PanIC multiplier that does not use the true coefficient support. A pointwise fixed-dimensional result shows that, whenever the two ordinary half-sample estimators are root-sample-size consistent, the cross-signed $L_1$ target has the same rate. Uniformity over a fixed positive compact multiplier range ensures that calibration does not alter the first-order consistency target. A numerical study evaluates the rule in independent and correlated Gaussian and logistic designs and in a Poisson design, with constraint-radius, support-recovery, predictive, calibration, grid, solver, and runtime diagnostics.
     \item For constrained linear least squares, we derive fixed-threshold second-order laws and the corresponding result after exact selection on a finite grid, including non-Gaussian boundary limits. We also establish a subsampling approximation for nondegenerate scalar projections of the fixed-threshold laws.
 \end{enumerate}
 \end{bluechange}
 Our consistency target is the smallest constraint level attaining the minimum population risk in a nested candidate family. It is distinct from parameter-estimation and support-selection consistency as studied, for example, by \citet{fan_2001} and \citet{zhao_model_2006}. The oracle inequalities of \citet{massart_2011_lasso_l1} also concern a different target: our results establish information-criterion consistency for the stated fixed-dimensional constrained regression families without first deriving finite-sample oracle inequalities.
 
-The rest of this article proceeds as follows: in Section \ref{Sect: Method}, the PanIC and BIC-like IC framework is reviewed and our proposed estimation method is given with theoretical justification. In Section \ref{Sect: Asymptotic-distribution}, we derive second-order asymptotic distribution results for constrained estimators and discuss the non-Gaussian limits that can arise under binding constraints. In Section \ref{Sect: Simulation}, we evaluate the implementable calibration protocol in independent and correlated Gaussian and logistic designs and in a Poisson design, and give a numerical boundary and subsampling illustration. Finally, concluding remarks and an outline of future research directions are given in Section \ref{Sect: Conclusion}. Proofs, supporting technical arguments, and reproducibility details are collected in the Appendix.
+The rest of this article proceeds as follows: in Section \ref{Sect: Method}, the PanIC and BIC-like IC framework is reviewed and our proposed estimation method is given with theoretical justification. In Section \ref{Sect: Asymptotic-distribution}, we derive second-order asymptotic distribution results for constrained estimators and discuss the non-Gaussian limits that can arise under binding constraints. In Section \ref{Sect: Simulation}, we evaluate the implementable calibration protocol in independent and correlated Gaussian and logistic designs and in a Poisson design, and give a numerical boundary and subsampling illustration. Section \ref{Sect: Conclusion} concludes the paper. Proofs, supporting technical arguments, and reproducibility details are collected in the Appendix.
 
 \section{Method} \label{Sect: Method}
-We review the PanIC and BIC-like IC frameworks in Section \ref{Sect: PanIC}. The connection between regularised regression estimation and ICs is established in Section \ref{Sect: Regression}. A formal justification of our proposed estimation method is presented in Section \ref{Sect: Theory}. Lastly, a computational method is given in Section \ref{Sect: Computations}.
-
 \subsection{PanIC}\label{Sect: PanIC}
 Consider the following setting of a general model selection problem. Let $(\Omega, \mathcal{F}, \mathbb{P})$ be the underlying probability space and $X: \Omega \to \mathbb{X} \subset \mathbb{R}^d$ be a random vector with law $\mathbb{P}_X$ on $(\mathbb{X}, \mathcal{B}(\mathbb{X}))$, where $\mathcal{B}(\mathbb{X})$ denotes the Borel $\sigma$-algebra of $\mathbb{X}$. We observe a sequence of independent and identically distributed (i.i.d.) random variables $(X_i)_{i \in \left[n\right]}$ with common distribution $\mathbb{P}_X$, where $\left[n\right] = \{1, \hdots, n\}$. The set of candidate models is given by a sequence of hypotheses $(\mathcal{H}_k)_{k \in \left[m\right]}$. Each $\mathcal{H}_k$ is a parameterised model class indexed by some parameter vector $\beta_k \in \mathbb{T}_k \subset \mathbb{R}^{q_k}$, where $(q_k)_{k \in \left[m\right]} \subset \mathbb{N}$. That is, for each $k \in \left[m\right]$,
 \[\mathcal{H}_k = \{h_k(\cdot; \beta_k): \mathbb{X} \to \mathbb{R}, \beta_k \in \mathbb{T}_k\}.\]
@@ -128,7 +123,7 @@ which may depend on the full observation and on the parameter. For each $k \in \
 \[R_{k,n}(\beta_k) = \frac{1}{n} \sum_{i=1}^n \ell_k(X_i; \beta_k)\]
 and
 \[r_k(\beta_k) = \mathbb{E} \{\ell_k(X; \beta_k)\}\]
-as the empirical risk and the expected risk, respectively. This formulation includes the common special case in which $\ell_k(X;\beta_k)=\ell(h_k(X;\beta_k))$ for some scalar loss $\ell$. Examples of classic model selection problems under this formulation are presented by \cite{nguyen_panic:_2023}.
+as the empirical risk and the expected risk, respectively. This formulation includes the common special case in which $\ell_k(X;\beta_k)=\ell(h_k(X;\beta_k))$ for some scalar loss $\ell$.
 
 Further, we call $k^*$ the optimal hypothesis index,
 \begin{equation}\label{Eqs: Optimal hypothesis index}
@@ -201,12 +196,12 @@ Let $0<\underline\kappa\le\overline\kappa<\infty$, and let $\widehat\kappa_n>0$ 
 Then $P_{k,n}=\widehat\kappa_nQ_{k,n}$ satisfies B1 and B2. Consequently, whenever A1--A3 hold, the associated PanIC selector is consistent. After replacing $\sqrt n$ by $n$ in the displayed separation condition, the same argument verifies B1 and $\mathrm{B2}^*$; whenever C1--C5 also hold, the associated BIC-like selector is consistent.
 \end{proposition}
 
-Observe that this result permits data-dependent calibration of $\kappa$; Appendix \ref{App: kappa calibration} gives a concrete cross-fitting procedure for such computation.
+Appendix \ref{App: kappa calibration} gives a data-dependent calibration rule whose multiplier remains in the compact range required by the proposition.
 \end{bluechange}
 
 
 \subsection{Regression Problems} \label{Sect: Regression}
-This section connects constrained regression estimation with model selection in the PanIC framework. We observe pairs $(x,y)$, where the response satisfies $y\in \mathcal{Y}\subset \mathbb{R}$ and the covariate vector satisfies $x\in\mathcal{X}\subset \mathbb{R}^d$, for some positive integer $d$. Thus, in the PanIC notation, a single observation is the pair $Z=(X,Y)\in\mathcal{X}\times\mathcal{Y}$. The goal is to infer the underlying relationship from an observed sample $(x_i, y_i)_{i\in\left[n\right]}$. In the generalised linear model (GLM) framework, this relationship is encoded through a mean function $h(\cdot; \beta_0, \beta): \mathcal{X} \to \mathcal{M}$, where $\mathcal{M}$ denotes the mean-parameter space, parametrised by a slope vector $\beta\in\mathbb{R}^d$ and an intercept $\beta_0\in\mathbb{R}$. We work with a loss function $\ell(z;\beta_0,\beta)$, where $z=(x,y)$. Our focus is on linear, logistic, Poisson, and Gamma regressions. Collectively, these models cover common response types, including continuous, binary, count, and positive continuous data. Table \ref{Table: Regression} summarises the corresponding mean and loss functions.
+In the regression setting, one observation is $Z=(X,Y)\in\mathcal X\times\mathcal Y$. A GLM mean function $h(\cdot;\beta_0,\beta):\mathcal X\to\mathcal M$ is indexed by an intercept $\beta_0\in\mathbb R$ and slopes $\beta\in\mathbb R^d$, and the loss is written $\ell(Z;\beta_0,\beta)$. Table \ref{Table: Regression} gives the linear, logistic, Poisson, and Gamma cases considered below.
 \begin{table}[H]
 \captionsetup{font=footnotesize}
 \caption{Mean and loss functions for generalised linear regression models. Here, $h=h(x;\beta_0,\beta)$. The Gamma model uses a log link, rather than the canonical inverse link.}
@@ -249,7 +244,7 @@ To mitigate the tendency of ERM to overfit, the Lasso regression, the Ridge regr
     \mathbb{T} &= \{(\beta_0, \beta) \, |\, \beta_0 \in \mathbb{U},\, \beta\in \mathbb{R}^d: \lVert\beta\rVert_p^p \leq C\},
 \end{split}
 \end{align}
-where $\mathbb{U}$ is a sufficiently large compact \blue{interval} in $\mathbb{R}$ that contains the optimal intercept $\beta^*_0$ in its interior. Setting $p=1$ in (\ref{Eqs: Lasso Ridge}) corresponds to the Lasso problem \citep{tibshirani_regression_1996}, and setting $p=2$ corresponds to the Ridge regression problem \citep{hoerl_ridge_1970}.
+where $\mathbb{U}$ is a fixed compact \blue{interval} in $\mathbb{R}$, common to all candidates. \blue{Unless stated otherwise, the population risks and targets are defined relative to this restriction. When the results are interpreted for an otherwise unrestricted-intercept GLM, we assume that every relevant unrestricted population minimiser exists and has its intercept in $\operatorname{int}(\mathbb U)$, so the restriction is locally inactive.} Setting $p=1$ in (\ref{Eqs: Lasso Ridge}) corresponds to the Lasso problem \citep{tibshirani_regression_1996}, and setting $p=2$ corresponds to the Ridge regression problem \citep{hoerl_ridge_1970}.
 Slightly modifying (\ref{Eqs: Lasso Ridge}), we also retrieve the Elastic-net problem
 \citep{zou_regularization_2005}:
 \begin{align}\label{Eqs: Elastic Net}
@@ -272,7 +267,7 @@ for some $\alpha \in (0, 1)$ and $C\in\mathbb{R}_{\geq0}$. Notably, both (\ref{E
 The PanIC theory can therefore be applied to consistent selection among these nested constraint levels once its loss, compactness, and penalty conditions are verified.
 
 \subsection{Consistency} \label{Sect: Theory}
-We outline sufficient conditions for consistent model selection in linear, logistic, Poisson, and Gamma regression problems. These conditions verify A1--A3; the consistency conclusion then follows for any choice of penalty satisfying B1 and B2. Complete derivations are given in the Appendix.
+The following conditions verify A1--A3 for the four regression losses; the Appendix gives the derivations. The consistency conclusion then follows for any penalty satisfying B1 and B2.
 \begin{proposition}\label{Prop: Sufficient conditions}
 Assume that $(X_i,Y_i)_{i\in\mathbb N}$ is an i.i.d. sequence and that the stated support and moment conditions hold for the regression problem under consideration. Then any PanIC estimator based on a penalty satisfying B1 and B2 enjoys the consistency property in (\ref{Eqs: Consistency}).
     \begin{enumerate}
@@ -285,7 +280,14 @@ Assume that $(X_i,Y_i)_{i\in\mathbb N}$ is an i.i.d. sequence and that the state
 \begin{remark}
 \begin{itemize}
     \item[i)] A random vector $X$ has a finite $p$th moment when $\mathbb E(\lVert X\rVert^p)<\infty$, where $\lVert\cdot\rVert$ is the Euclidean norm.
-    \item[ii)] The same verification is immediate when both the covariate vector and the response have compact support compatible with the relevant response space. For Gamma regression, the compact response support must be bounded away from zero so that $\log Y$ is bounded.
+    \item[ii)] The same conditions hold when both the covariate vector and the response have compact support compatible with the relevant response space. For Gamma regression, the compact response support must be bounded away from zero so that $\log Y$ is bounded.
+    \item[iii)] Throughout, a random vector $X$ is called sub-Gaussian if there is a constant $K<\infty$ such that
+    \[
+    \mathbb E\exp\{t u^\top(X-\mathbb EX)\}
+    \le \exp\left(\frac{K^2t^2\|u\|_2^2}{2}\right)
+    \quad\text{for all }u\in\mathbb R^d\text{ and }t\in\mathbb R.
+    \]
+    In fixed dimension this implies $\mathbb E\exp\{s\|X\|_1\}<\infty$ for every $s>0$, as used in the Poisson and Gamma envelope arguments.
 \end{itemize}
 \end{remark}
 
@@ -296,7 +298,7 @@ B_{\mathbb{U}}=\sup_{u\in\mathbb{U}}|u|,
 \qquad B_k=\sup_{\beta\in\mathcal B_k}\|\beta\|_2,
 \qquad \widetilde x=(1,x^\top)^\top,
 \]
-and define $A_k(x)=B_{\mathbb{U}}+B_k\|x\|_2$. The following statement makes explicit the role of constraining the intercept to the compact interval $\mathbb U$.
+and define $A_k(x)=B_{\mathbb{U}}+B_k\|x\|_2$.
 
 \begin{proposition}\label{Prop: intercept envelopes}
 For $\theta=(\beta_0,\beta)$ and the Euclidean parameter norm, the four losses admit the following pointwise Lipschitz moduli on $\mathbb{U}\times\mathcal B_k$:
@@ -360,12 +362,12 @@ Suppose $m<\infty$ is fixed, $(r_n)$ is a deterministic positive sequence, and
 For $n\ge2$, the penalty in (\ref{Eqs: Modified BIC}) is strictly positive, is $o_{\mathbb P}(1)$ uniformly over $k$, and satisfies $\mathrm{B2}^*$. Define the penalty at $n=1$ to be any positive value. Consequently, whenever A1--A3 and C1--C5 hold, the selector in (\ref{Eqs: Modified BIC}) is consistent.
 \end{proposition}
 
-The consistency property only requires a nonnegative bounded or slowly growing score $D_{k,n}$; a more specific degrees-of-freedom interpretation is model-specific. For Lasso least squares, the number of non-zero slope parameters is an unbiased degrees-of-freedom estimate for a fixed penalty multiplier under the Gaussian-model and design conditions of \citet{zou_degrees_2007}. At a data-dependent multiplier or a prescribed constraint radius, it is used here only as a generic complexity score. For Ridge least squares with an unpenalised intercept, let $\bar X$ denote the column-centred design matrix and let $\bar y$ be the centred response vector, with $(\bar y)_i=y_i-n^{-1}\sum_{j=1}^n y_j$. For a fixed $\lambda>0$, the penalised objective $n^{-1}\|\bar y-\bar X\beta\|_2^2+\lambda\|\beta\|_2^2$ has slope smoother complexity
+The consistency property only requires a nonnegative bounded or slowly growing score $D_{k,n}$; a more specific degrees-of-freedom interpretation is model-specific. For Lasso least squares, the number of non-zero slope parameters is an unbiased degrees-of-freedom estimate for a fixed penalty multiplier under the Gaussian-model and design conditions of \citet{zou_degrees_2007}. At a data-dependent multiplier or a prescribed constraint radius, it is used here only as a generic complexity score. For Ridge least squares with an unpenalised intercept, let $\check X$ denote the column-centred design matrix and let $\check y$ be the centred response vector, with $(\check y)_i=y_i-n^{-1}\sum_{j=1}^n y_j$. For a fixed $\lambda>0$, the penalised objective $n^{-1}\|\check y-\check X\beta\|_2^2+\lambda\|\beta\|_2^2$ has ridge smoother trace
 \begin{equation}\label{Eqs: Ridge df}
 D^{\mathrm{ridge}}(\lambda)
-=\operatorname{tr}\{\bar X(\bar X^\top \bar X+n\lambda I)^{-1}\bar X^\top\}.
+=\operatorname{tr}\{\check X(\check X^\top \check X+n\lambda I)^{-1}\check X^\top\}.
 \end{equation}
-At $\lambda=0$, the inverse is replaced by the Moore--Penrose pseudoinverse, giving $\operatorname{rank}(\bar X)$. Evaluating this trace at a data-dependent multiplier supplies a generic score, not automatically the degrees of freedom of the complete selection procedure.
+At $\lambda=0$, the inverse is replaced by the Moore--Penrose pseudoinverse, giving $\operatorname{rank}(\check X)$. Evaluating this trace at a data-dependent multiplier supplies a generic score, not automatically the degrees of freedom of the complete selection procedure.
 For Elastic-net, a non-zero parameter count may be used as a bounded generic complexity score, but it is not described here as an unbiased degrees-of-freedom estimator.
 
 \begin{remark}
@@ -377,7 +379,7 @@ For any common random or deterministic scalar $a_n$ and any $c_0$ not depending 
 Thus $c_0$ cancels from every pairwise criterion difference and cannot change the selected model; it only enforces strict positivity when the smallest threshold is zero.
 \end{remark}
 
-Because coefficient-norm thresholds depend on predictor units, all continuous predictors should be centred and scaled, with the intercept left unpenalised. For Gaussian regression, the response or loss should likewise be put on a documented dimensionless scale. A convenient dimensionless threshold transform on a deterministic interval $[a,b]$ is $\psi(C)=(C-a)/(b-a)$; on a fixed grid with $m\geq2$, one may instead use the rank $(k-1)/(m-1)$. Any such strictly increasing transform preserves the consistency argument.
+Because coefficient-norm thresholds depend on predictor units, all continuous predictors should be centred and scaled, with the intercept left unpenalised. For Gaussian regression, the response or loss should likewise be put on a documented dimensionless scale. A dimensionless threshold transform on a deterministic interval $[a,b]$ is $\psi(C)=(C-a)/(b-a)$; on a fixed grid with $m\geq2$, one may instead use the rank $(k-1)/(m-1)$. Any such strictly increasing transform preserves the consistency argument.
 \end{bluechange}
 
 \begin{proposition}
@@ -398,7 +400,7 @@ Let $(X_{i})_{i\in\mathbb{N}}$ be an i.i.d. sequence taking values in a set $\ma
 \[
 \mathcal{H}_{k}=\left\{ h(\cdot;\beta):\mathbb{X}\to\mathbb{R}, \beta\in\mathbb{T}_{k}\subset\mathbb{R}^{q}\right\},
 \]
-for some positive integer $q$, where $a<b$. Let $\mathcal{L}:k\mapsto\mathbb{T}_{k}$ be a continuous correspondence with \blue{nonempty} compact values, and assume that the parameter spaces $(\mathbb{T}_{k})_{k\in\left[a,b\right]}$ are nested. Let $\ell:\mathbb{X}\times\mathbb{R}^{q}\to\mathbb{R}$ be a loss function and define
+for some positive integer $q$, where $a<b$. Let $\mathcal{L}:k\mapsto\mathbb{T}_{k}$ be a continuous correspondence with \blue{nonempty} compact values, and assume that the parameter spaces are increasing in the index, so that $\mathbb T_k\subseteq\mathbb T_{k'}$ whenever $k<k'$. Let $\ell:\mathbb{X}\times\mathbb{R}^{q}\to\mathbb{R}$ be a loss function and define
 \[
 R_{n}(\beta)=\frac{1}{n}\sum_{i=1}^{n}\ell(X_{i};\beta),\qquad r(\beta)=\mathbb{E}\{\ell(X;\beta)\}.
 \]
@@ -424,14 +426,25 @@ For a continuum interval $[a,b]$ with $0\le a<b$, define the regression paramete
         \{(\beta_0, \beta) \, |\, \beta_0 \in \mathbb{U}, \beta\in \mathbb{R}^d: \alpha\lVert\beta\rVert_1 + (1-\alpha)\lVert\beta\rVert_2^2 \leq k\}, & \text{for Elastic-net regression}.
     \end{cases}
 \end{equation}
-With this definition, $\mathcal{L}: k \mapsto \mathbb{T}_k$ is compact-valued and continuous. Therefore, we have the following result.
+\begin{bluechange}
+\begin{lemma}\label{Lemma: constraint correspondence continuity}
+For each of the three definitions in (\ref{Eqs: Parameter Space}), the correspondence $k\mapsto\mathbb T_k$ is nonempty, compact-valued, increasing, and continuous on $[a,b]$.
+\end{lemma}
+\begin{proof}
+Write $\mathbb T_k=\mathbb U\times\mathcal B_k$, where $\mathcal B_k=\{\beta:g(\beta)\le k\}$ and $g$ is the Lasso, Ridge, or Elastic-net constraint functional. In all three cases, $g$ is continuous, coercive, and satisfies $g(0)=0$. Hence every $\mathcal B_k$ is nonempty and compact, and the sets are increasing in $k$.
+
+Let $k_n\to k$. If $\beta_n\in\mathcal B_{k_n}$ and $\beta_n\to\beta$, continuity of $g$ gives $g(\beta)\le k$, which proves upper hemicontinuity; coercivity supplies the local uniform boundedness needed for the sequential argument. For lower hemicontinuity, fix $\beta\in\mathcal B_k$. If $k=0$, then $\beta=0$ and one may take $\beta_n=0$. If $k>0$, set $t_n=\min\{1,k_n/k\}$ and $\beta_n=t_n\beta$. For $0\le t\le1$, each of the three functionals satisfies $g(t\beta)\le t g(\beta)$, so $g(\beta_n)\le k_n$ and $\beta_n\to\beta$. Thus $k\mapsto\mathcal B_k$ is continuous. Taking its Cartesian product with the fixed compact interval $\mathbb U$ preserves continuity and compact-valuedness.
+\end{proof}
+\end{bluechange}
+
+Theorem \ref{Thm: Infinite selection} and Lemma \ref{Lemma: constraint correspondence continuity} give the following result.
 
 \begin{corollary}\label{Cor: continuum PanIC GLM}
 Under the assumptions of Theorem \ref{Thm: Infinite selection}, let $(\mathcal H_k)_{k\in[a,b]}$ be the family of hypothesis spaces for a linear, logistic, Poisson, or Gamma regression problem described in Table \ref{Table: Regression}, with parameter spaces as in (\ref{Eqs: Parameter Space}). Suppose the corresponding conditions in Proposition \ref{Prop: Sufficient conditions} hold and $P_{k,n}$ satisfies B1 and B2. Then the selector in Theorem \ref{Thm: Infinite selection} is consistent in the sense of (\ref{Eqs: convergence in probability}).
 \end{corollary}
 
 \begin{corollary}\label{Cor: continuum BIC linear}
-In the linear-regression setting, suppose the conditions of Proposition \ref{Prop: BIC-like consistency} hold. Then the conclusion of Theorem \ref{Thm: Infinite selection} applies to any continuous strictly increasing BIC-like penalty on $[a,b]$ that satisfies B1 and $\mathrm{B2}^*$. In particular, for any fixed continuous strictly increasing $q:[a,b]\to\mathbb R_{>0}$, the penalty $P_{k,n}=q(k)\log(n)/n$ for $n\ge2$, together with any positive convention at $n=1$, satisfies these conditions.
+In the linear-regression setting, suppose the conditions of Proposition \ref{Prop: BIC-like consistency} hold. Then the conclusion of Theorem \ref{Thm: Infinite selection} applies to any continuous strictly increasing BIC-like penalty on $[a,b]$ that satisfies B1 and $\mathrm{B2}^*$. In particular, for any fixed continuous strictly increasing $q:[a,b]\to\mathbb R_{>0}$, the penalty $P_{k,n}=q(k)\log(n)/n$ for $n\ge2$, together with a positive continuous strictly increasing convention at $n=1$, such as $P_{k,1}=q(k)$, satisfies these conditions.
 \end{corollary}
 
 \begin{bluechange}
@@ -443,7 +456,7 @@ v_n(c)=\min_{\theta\in\mathbb T_c}R_n(\theta),
 and let $c^*$ be the smallest minimiser of $v$.
 
 \begin{theorem}\label{Thm: random finite grid}
-Let $(\mathbb T_c)_{c\in[a,b]}$ be nested, and let $\mathcal G_n\subset[a,b]$ be a nonempty finite random set, possibly constructed from the same data used in $R_n$. Suppose there are measurable $c_n^+\in\mathcal G_n$ and nonnegative $\delta_n=o_{\mathbb P}(1)$ such that
+Let $(\mathbb T_c)_{c\in[a,b]}$ be increasing, so that $\mathbb T_c\subseteq\mathbb T_{c'}$ whenever $c<c'$, and let $\mathcal G_n\subset[a,b]$ be a nonempty finite random set, possibly constructed from the same data used in $R_n$. Suppose there are measurable $c_n^+\in\mathcal G_n$ and nonnegative $\delta_n=o_{\mathbb P}(1)$ such that
 \begin{equation}\label{Eqs: one sided coverage}
 c^*\le c_n^+\le c^*+\delta_n.
 \end{equation}
@@ -515,16 +528,16 @@ for some value $C\in\mathbb{R}_{+}$. Assume that a solution exists and that the 
 \end{split}
 \label{Eqs: General unconstrained problem}
 \end{align}
-Conversely, a minimiser $\beta_\lambda$ of the penalised problem is a constrained minimiser at the level $C_\lambda=g(\beta_\lambda)$. These implications do not yield a one-to-one correspondence between $C$ and $\lambda$: multipliers may be nonunique and the fitted constraint value may have plateaus \citep{kloft_lp-norm_2011}. Under the additional uniqueness assumptions below, define $\mathcal M(\lambda)=g(\beta_\lambda)$, where $\beta_\lambda$ is the unique penalised minimiser. Lemmas \ref{Lemma: continuity} and \ref{Lemma: monotonicity} establish the continuity and monotonicity needed for root finding. Although these lemmas are written without an intercept, their proofs apply on $\mathbb U\times\mathbb R^d$ after replacing each sublevel set by the compact set $\mathbb U\times\{\beta:g(\beta)\le c\}$ and penalising only $g(\beta)$.
+Conversely, a minimiser $\beta_\lambda$ of the penalised problem is a constrained minimiser at the level $C_\lambda=g(\beta_\lambda)$. These implications do not yield a one-to-one correspondence between $C$ and $\lambda$: multipliers may be nonunique and the fitted constraint value may have plateaus \citep{kloft_lp-norm_2011}. Under the additional uniqueness assumptions below, define the fitted-radius map $\rho(\lambda)=g(\beta_\lambda)$, where $\beta_\lambda$ is the unique penalised minimiser. Lemmas \ref{Lemma: continuity} and \ref{Lemma: monotonicity} establish the continuity and monotonicity needed for root finding. Although these lemmas are written without an intercept, their proofs apply on $\mathbb U\times\mathbb R^d$ after replacing each sublevel set by the compact set $\mathbb U\times\{\beta:g(\beta)\le c\}$ and penalising only $g(\beta)$.
 \begin{lemma}\label{Lemma: continuity}
 Suppose $f:\mathbb{R}^{d}\to\mathbb{R}$ is a strictly convex
 function and $g:\mathbb{R}^{d}\to\mathbb{R}_{\geq0}$ is a non-negative
 convex function with non-empty and bounded sub-level sets $L_{c}=\{\beta\in\mathbb{R}^{d}\,|\,g(\beta)\leq c\}$,
 for each $c\in\mathbb{R}_{\geq0}$. Assume that, for each $\lambda\in\mathbb{R}_{\geq0}$, the function
-$\beta\mapsto f\left(\beta\right)+\lambda g\left(\beta\right)$ admits a unique minimiser on $\mathbb{R}^{d}$. Then, the mapping $\mathcal{M}:\mathbb{R}_{\geq0}\to\mathbb{R}_{\geq0}$,
+$\beta\mapsto f\left(\beta\right)+\lambda g\left(\beta\right)$ admits a unique minimiser on $\mathbb{R}^{d}$. Then, the fitted-radius map $\rho:\mathbb{R}_{\geq0}\to\mathbb{R}_{\geq0}$,
 given by
 \[
-\mathcal{M}(\lambda)=g(\beta_{\lambda}),
+\rho(\lambda)=g(\beta_{\lambda}),
 \]
 is a continuous function, where
 \[
@@ -568,16 +581,7 @@ The numerical intercept is unpenalised and unconstrained. Agreement with the com
 The empirical comparisons cover Gaussian, logistic, and Poisson regression. Gamma regression is treated analytically in Proposition \ref{Prop: estimated Gamma shape}, but is not included in the comparative simulations. A separate fixed-shape numerical check reported a convergence warning and is recorded with the code.
 \end{bluechange}
 
-The optimisation steps in Algorithm \ref{Algo: PanIC Lasso}
-are the same whether the final selector is PanIC or the modified BIC.
-In particular, once $\widehat v_{k,n}$ and $(\hat{\beta}_{0,k,n},\hat{\beta}_{k,n})$
-are computed, one may evaluate either a PanIC penalty $P_{k,n}$,
-or, in the linear regression setting, a modified BIC penalty term
-\[
-P_{k,n}=\frac{\log n}{n}\{c_0+\kappa_D\widetilde D_{k,n}+\varepsilon\psi(C_k)\},
-\]
-with $\widetilde D_{k,n}$ defined in (\ref{Eqs: cumulative complexity}),
-and then minimise $\widehat v_{k,n}+P_{k,n}$ over $k$.
+Algorithm \ref{Algo: PanIC Lasso} computes the constrained fits once and then selects the smallest minimiser of $\widehat v_{k,n}+P_{k,n}$. The penalty input may be the PanIC penalty or, for linear regression, the BIC-like penalty in (\ref{Eqs: Modified BIC}).
 
 \begin{algorithm}[H]
 \small
@@ -600,7 +604,7 @@ Associated with each hypothesis, define the optimisation problem
 \label{Eqs: Constrained problem algo}
 \end{align}
 \For{$k\in\left[m\right]$} \State Solve (\ref{Eqs: Constrained problem algo})
-via the corresponding Lagrangian problem using the bracketed root-search protocol above; return the unpenalised fit when the constraint is inactive.
+directly, or via the corresponding Lagrangian problem when the root-search conditions above hold; return the unpenalised fit when the constraint is inactive.
 \State Denote the optimal value and optimal solution of (\ref{Eqs: Constrained problem algo}) by $\widehat v_{k,n}$ and $(\hat{\beta}_{0,k,n},\hat{\beta}_{k,n})$, respectively.
 \EndFor \State Compute the set of minimising indices $\hat{\mathcal{K}}$, and then compute the PanIC estimate, where
 \[
@@ -614,11 +618,7 @@ via the corresponding Lagrangian problem using the bracketed root-search protoco
 
 \label{Sect: Asymptotic-distribution}
 
-In this subsection, we provide the second-order asymptotic distribution
-of constrained least squares estimators in linear regression. In contrast
-to standard ordinary least squares (OLS) asymptotics, binding constraints
-typically yield non-Gaussian limit distributions described by a random
-quadratic optimisation problem over the critical cone.
+We derive the second-order law for constrained least squares. A binding constraint generally replaces the usual OLS Gaussian limit by the solution of a random quadratic programme over the critical cone.
 
 We work under the following setup. Let $(X_{i},Y_{i})_{i\in\mathbb{N}}$
 be i.i.d. with $X_{i}\in\mathbb{R}^{d}$. We estimate an intercept
@@ -641,7 +641,7 @@ with $(C_{k})$ strictly increasing.
 
 Define the population and empirical constrained minimisers
 \[
-(\beta_{0,k}^{*},\beta_{k}^{*})=\argmin_{(\beta_{0},\beta)\in\mathbb{T}_{k}}r(\beta_{0},\beta),\qquad(\hat{\beta}_{0,k,n},\hat{\beta}_{k,n})=\argmin_{(\beta_{0},\beta)\in\mathbb{T}_{k}}R_{n}(\beta_{0},\beta),
+(\beta_{0,k}^{*},\beta_{k}^{*})=\argmin_{(\beta_{0},\beta)\in\mathbb{T}_{k}}r(\beta_{0},\beta),\qquad(\hat{\beta}_{0,k,n},\hat{\beta}_{k,n})\in\argmin_{(\beta_{0},\beta)\in\mathbb{T}_{k}}R_{n}(\beta_{0},\beta),
 \]
 and the corresponding optimal values
 \[
@@ -726,27 +726,27 @@ n\{R_n(\widehat\beta_n)-R_n(\beta^\circ)\}\rightsquigarrow
 \]
 \end{proposition}
 
-Write $\widehat\theta_{k,n}=(\widehat\beta_{0,k,n},\widehat\beta_{k,n}^\top)^\top$ for a measurable selection from the empirical constrained argmin. For a subset $J\subset[n]$ of size $b$, let $\widehat\theta_{k,b,J}$ be the corresponding measurable selection, using the same deterministic tie rule, computed from the observations indexed by $J$.
+Write $\widehat\theta_{k,n}=(\widehat\beta_{0,k,n},\widehat\beta_{k,n}^\top)^\top$ for a measurable selection from the empirical constrained argmin. For a positive integer $b\le n$ and a subset $J\subset[n]$ of size $b$, let $\widehat\theta_{k,b,J}$ be the corresponding measurable selection, using the same deterministic tie rule, computed from the observations indexed by $J$.
 
 \begin{proposition}\label{Prop: subsampling fixed k}
-Fix $k$ and suppose that Theorem \ref{Thm: Shapiro fixed k} applies to this fixed candidate. Let $a\in\mathbb R^{d+1}$ be fixed and let $F_{k,a}$ denote the nondegenerate distribution function of $a^\top\bar d_k(Z_k)$. Let the deterministic integers $1\le b=b_n\le n$ satisfy $b\to\infty$ and $b/n\to0$, let $\mathcal J_{n,b}=\{J\subset[n]:|J|=b\}$, and define
+Fix $k$ and suppose that Theorem \ref{Thm: Shapiro fixed k} applies to this fixed candidate. Let $a\in\mathbb R^{d+1}$ be fixed and let $F_{k,a}$ denote the nondegenerate distribution function of $a^\top\bar d_k(Z_k)$. Let the deterministic integers $1\le b_n\le n$ satisfy $b_n\to\infty$ and $b_n/n\to0$, let $\mathcal J_{n,b_n}=\{J\subset[n]:|J|=b_n\}$, and define
 \[
-\widehat L_{n,b,a}(x)
-=\binom{n}{b}^{-1}\sum_{J\in\mathcal J_{n,b}}
-\mathds 1\!\left\{\sqrt b\,a^\top(\widehat\theta_{k,b,J}-\widehat\theta_{k,n})\le x\right\}.
+\widehat L_{n,b_n,a}(x)
+=\binom{n}{b_n}^{-1}\sum_{J\in\mathcal J_{n,b_n}}
+\mathds 1\!\left\{\sqrt{b_n}\,a^\top(\widehat\theta_{k,b_n,J}-\widehat\theta_{k,n})\le x\right\}.
 \]
 Then, at every continuity point $x$ of $F_{k,a}$,
 \[
-\widehat L_{n,b,a}(x)\xlongrightarrow{\mathbb P}F_{k,a}(x).
+\widehat L_{n,b_n,a}(x)\xlongrightarrow{\mathbb P}F_{k,a}(x).
 \]
-Let $B_n\to\infty$ be deterministic. Conditional on the data, draw $B_n$ independent uniform subsets from $\mathcal J_{n,b}$ with replacement, or a uniform sample of $B_n\le\binom nb$ distinct subsets without replacement. The empirical distribution based on these subsets has the same pointwise limit.
+Let $B_n\to\infty$ be deterministic. Conditional on the data, draw $B_n$ independent uniform subsets from $\mathcal J_{n,b_n}$ with replacement, or a uniform sample of $B_n\le\binom n{b_n}$ distinct subsets without replacement. The empirical distribution based on these subsets has the same pointwise limit.
 \end{proposition}
 
-The result is an application of the i.i.d. subsampling theorem and its stochastic-approximation corollary in \citet[Theorem 2.2.1 and Corollary 2.4.1]{politis1999subsampling}, with normalising sequence $\tau_n=\sqrt n$. The condition $b/n\to0$ gives $\tau_b/\tau_n=\sqrt{b/n}\to0$. Applying the same subsampling theorem directly to the scalar estimator in Proposition \ref{Prop: scalar boundary} gives $a=1$. Its subsampling distribution converges at every $x\ne0$ to the distribution of $\min\{G,0\}$. Consequently, its quantiles that lie strictly below zero are consistently estimated at probability levels where the limiting distribution function is continuous and strictly increasing; no quantile-consistency conclusion is asserted at the jump at zero. For vector-valued uncertainty, the norm version of the same construction follows from \citet[Theorem 2.5.2]{politis1999subsampling} whenever the limiting norm distribution is continuous at the quantile of interest. A simple admissible schedule is $b_n=\lfloor n^\gamma\rfloor$ with $0<\gamma<1$; finite-sample sensitivity to $b_n$ should nevertheless be assessed.
+The proposition applies \citet[Theorem 2.2.1 and Corollary 2.4.1]{politis1999subsampling} with normalising sequence $\tau_n=\sqrt n$; the condition $b_n/n\to0$ gives $\tau_{b_n}/\tau_n=\sqrt{b_n/n}\to0$. For Proposition \ref{Prop: scalar boundary}, the subsampling distribution therefore converges at every $x\ne0$ to the law of $\min\{G,0\}$. Lower-tail quantiles strictly below zero are consistently estimated at probability levels where the limiting distribution is continuous and strictly increasing, but no conclusion is asserted at the atom at zero.
+
+For vector-valued uncertainty, \citet[Theorem 2.5.2]{politis1999subsampling} gives the corresponding norm construction when the limiting norm distribution is continuous at the quantile of interest. One admissible schedule is $b_n=\lfloor n^\gamma\rfloor$, $0<\gamma<1$; finite-sample sensitivity to $b_n$ should nevertheless be assessed.
 \end{bluechange}
-We now record the immediate consequence of Theorem \ref{Thm: Shapiro fixed k}
-for selectors over a finite grid. The interval-indexed case requires
-additional localisation control, which we discuss in the sequel.
+For selectors over a finite grid, exact selection yields the following consequence of Theorem \ref{Thm: Shapiro fixed k}. The interval-indexed case requires additional localisation control, discussed below.
 
 \begin{corollary}\label{Cor: Shapiro selected} Assume that the conclusions
 of Theorem \ref{Thm: Shapiro fixed k} hold at $k=k^{*}$, with unique
@@ -795,23 +795,26 @@ $k\mapsto(\beta_{0,k}^{*},\beta_{k}^{*})$, and stochastic equicontinuity of the 
 \section{Simulation Study} \label{Sect: Simulation}
 
 \begin{bluechange}
-The primary comparison is among four implementable selectors: PanIC with the repeated two-way cross-signed multiplier rule in Appendix \ref{App: kappa calibration}, denoted PanIC-CF; the MSE-scale BIC-like criterion for Gaussian regression, with an analogue based on counts of non-zero slope parameters reported only as an exploratory comparator for logistic and Poisson regression; and two selectors computed from the same ordinary five-fold cross-validation losses, denoted CV-min and CV-1SE \citep{stone_cross-validatory_1974,hastie_elements_2009}. Proposition \ref{Prop: uniform kappa} shows that restricting the data-dependent multiplier to a fixed positive compact range preserves the first-order PanIC target. It does not assert that radius matching is optimal for prediction or support recovery, so these aspects are evaluated separately below. Support-informed choices of $\kappa$ are retained only as explicitly labelled supplementary post hoc oracle diagnostics and are not used in any primary table.
+The assessed methods are three implementable selectors: PanIC with the repeated two-way cross-signed multiplier rule in Appendix \ref{App: kappa calibration}, denoted PanIC-CF; the MSE-scale BIC-like criterion for Gaussian regression, with an analogue based on counts of non-zero slope parameters reported only as an exploratory comparator for logistic and Poisson regression; and ordinary minimum-loss five-fold cross-validation, denoted CV \citep{stone_cross-validatory_1974,hastie_elements_2009}. Proposition \ref{Prop: uniform kappa} shows that restricting the data-dependent multiplier to a fixed positive compact range preserves the first-order PanIC target. It does not assert that radius matching is optimal for prediction or support recovery, so these aspects are evaluated separately below. Support-informed choices of $\kappa$ are retained only as explicitly labelled supplementary post hoc oracle diagnostics and are not used in any primary table.
 
 \subsection{Simulation design}\label{Sect: Linear regression}
-Every setting has dimension $d=20$, with non-zero slope parameters indexed by $A^*=\{1,3,\ldots,19\}$. The ten nonzero entries alternate in sign and are rescaled so that $\beta^{*\top}\Sigma\beta^*=1$; throughout the simulation study, $C^\star=\|\beta^*\|_1$ denotes the corresponding true constraint radius. For the independent design, $\Sigma=I_{20}$ and $C^\star=\sqrt{10}\approx3.1623$. For the correlated design, $\Sigma_{rs}=0.5^{|r-s|}$, whose diagonal entries are all one, and the rescaling gives $C^\star\approx3.9778$. Thus every simulated coordinate is already on the same population scale, and no empirical predictor standardisation is applied. Gaussian responses have intercept zero and noise standard deviation $\sigma=1$; their selection loss is divided by $\sigma^2$. Logistic responses have intercept zero. The Poisson design is independent Gaussian with
+Every setting has dimension $d=20$, with non-zero slope parameters indexed by $A^*=\{1,3,\ldots,19\}$. Define $\widetilde\beta_j=(-1)^{(j-1)/2}$ for $j\in A^*$ and $\widetilde\beta_j=0$ otherwise, and set
+\[
+\beta^*=\frac{\widetilde\beta}{\sqrt{\widetilde\beta^\top\Sigma\widetilde\beta}}.
+\]
+Thus the ten non-zero entries have equal magnitude and alternating signs, and $\beta^{*\top}\Sigma\beta^*=1$. Throughout the simulation study, $C^\star=\|\beta^*\|_1$ denotes the corresponding true constraint radius. For the independent design, $\Sigma=I_{20}$ and $C^\star=\sqrt{10}\approx3.1623$. For the correlated design, $\Sigma_{rs}=0.5^{|r-s|}$, whose diagonal entries are all one, and the rescaling gives $C^\star\approx3.9778$. Thus every simulated coordinate is already on the same population scale, and no empirical predictor standardisation is applied. Gaussian responses have intercept zero and noise standard deviation $\sigma=1$; their selection loss is divided by $\sigma^2$. Logistic responses have intercept zero. The Poisson design is independent Gaussian with
 \[
 \beta_0^*=\log(2)-\tfrac12\beta^{*\top}\Sigma\beta^*\approx0.1931,
 \]
 so that the marginal count mean is two. The independent Gaussian and logistic settings use $n\in\{500,2000\}$, the correlated Gaussian and logistic settings use $n=1000$, and the Poisson setting uses $n=1000$.
 
-Each setting has $N=1{,}000$ Monte Carlo replications and an independent test sample of size 2,000 per replication. All selectors use the same fixed candidate grid $C_k=(k-1)/6$, $k=1,\ldots,121$, spanning $[0,20]$. This interval contains every simulated true radius. We use $\psi(C)=C/20$ and the PanIC shape $(1+\psi(C))\sqrt{\log n/n}$. The multiplier grid consists of 31 log-spaced values from $10^{-2}$ to $10^2$. PanIC-CF-original is a same-path sensitivity analysis that replaces the square-root log-log discrepancy weight in (\ref{Eqs: fold radius discrepancy}) by the log-log weight; it requires no additional model fit and does not enter the primary joint decision. The Gaussian BIC-like criterion uses $\kappa_D=1$, the cumulative non-zero parameter count, and $\varepsilon=10^{-6}$ in (\ref{Eqs: Modified BIC}). For compact table labelling, the logistic and Poisson analogues based on non-zero parameter counts are also denoted BIC-like; they use the likelihood-scale coefficient $1/2$ multiplying the same cumulative-count expression, are exploratory comparators, and are not covered by Proposition \ref{Prop: BIC-like consistency}.
+Each setting has $N=1{,}000$ Monte Carlo replications and an independent test sample of size 2,000 per replication. All selectors use the same fixed candidate grid $C_k=(k-1)/6$, $k=1,\ldots,121$, spanning $[0,20]$. This interval contains every simulated true radius. We use $\psi(C)=C/20$ and the PanIC shape $(1+\psi(C))\sqrt{\log n/n}$. The multiplier grid consists of 31 log-spaced values from $10^{-2}$ to $10^2$. The Gaussian BIC-like criterion uses $\kappa_D=1$, the cumulative exact non-zero parameter count, and $\varepsilon=10^{-6}$ in (\ref{Eqs: Modified BIC}). For compact table labels, the logistic and Poisson analogues are also denoted BIC-like. They use the likelihood-scale coefficient $1/2$ multiplying the same cumulative-count expression and are exploratory comparators outside the scope of Proposition \ref{Prop: BIC-like consistency}.
 
-Computational code and specifications are referenced in Appendix \ref{App: reproducibility}.
 
 \subsection{Data-driven calibration and evaluation metrics}\label{Sect: calibration}
 Within each replication, five balanced half-splits are generated from the recorded calibration seed and both directions are scored, giving ten calibration rows. Each row uses an ordinary training-half GLM to estimate coefficient signs and an independent ordinary validation-half GLM to estimate signed coefficient magnitudes; their cross-signed target is projected onto $[0,20]$ for scoring, while its raw value is retained for endpoint diagnostics. No regularised pilot is substituted. For the prespecified multiplier grid, we calculate the asymmetric discrepancy in (\ref{Eqs: fold radius discrepancy}), apply the largest-multiplier one-standard-error rule in (\ref{Eqs: kappa one standard error}), and refit on the full sample.
 
-For the cross-validation comparators, let $\mathcal I_1,\ldots,\mathcal I_V$, with $V=5$, be the balanced folds generated from the recorded CV seed. For candidate radius $C_k$, let $\widehat\vartheta_{-v,k}$ denote the constrained fit obtained without fold $\mathcal I_v$, and define
+For the cross-validation selector, let $\mathcal I_1,\ldots,\mathcal I_V$, with $V=5$, be the balanced folds generated from the recorded CV seed. For candidate radius $C_k$, let $\widehat\vartheta_{-v,k}$ denote the constrained fit obtained without fold $\mathcal I_v$, and define
 \[
 \widehat L_{v,k}
 =\frac{1}{|\mathcal I_v|}
@@ -822,33 +825,12 @@ Using the same family-specific selection loss as for the corresponding empirical
 \[
 \overline L_k=\frac{1}{V}\sum_{v=1}^V\widehat L_{v,k},
 \qquad
-\widehat{\operatorname{se}}_{\rm CV}(k)
-=\left[
-\frac{1}{V(V-1)}
-\sum_{v=1}^V
-\{\widehat L_{v,k}-\overline L_k\}^2
-\right]^{1/2}.
+\widehat k_{\rm CV}
+=\min\left\{\argmin_{k\in[m]}\overline L_k\right\}.
 \]
-With $C_1<\cdots<C_m$, define
-\[
-\widehat k_{\rm CV\text{-}min}
-=\min\left\{\argmin_{k\in[m]}\overline L_k\right\}
-\]
-and
-\[
-\widehat k_{\rm CV\text{-}1SE}
-=\min\left\{
-k\in[m]:
-\overline L_k
-\leq
-\overline L_{\widehat k_{\rm CV\text{-}min}}
-+\widehat{\operatorname{se}}_{\rm CV}
-(\widehat k_{\rm CV\text{-}min})
-\right\}.
-\]
-Thus CV-min chooses the smallest-radius minimiser in an exact tie, whereas CV-1SE chooses the smallest radius whose mean validation loss is within one descriptive across-fold standard error of the CV-min value. The five training samples overlap, so $\widehat{\operatorname{se}}_{\rm CV}$ is a selection heuristic rather than an independent-fold inferential standard error. CV-min and CV-1SE use identical folds, fitted paths, losses, candidate radii, preprocessing, and solver settings. Each selected radius is refitted on the full sample before evaluation on the same independent test sample; the independent test sample does not enter either selection rule.
+Thus CV chooses the smallest-radius minimiser in an exact tie. Its selected radius is refitted on the full sample before evaluation on the independent test sample, which does not enter the selection rule.
 
-For the selected index set of non-zero slope parameters $\widehat A=\{j:|\widehat\beta_j|>10^{-8}\}$, we report
+For the selected index set of non-zero slope parameters $\widehat A=\{j:\widehat\beta_j\ne0\}$, we report
 \[
 \mathrm{FP}=|\widehat A\setminus A^*|,\qquad
 \mathrm{FN}=|A^*\setminus\widehat A|,
@@ -858,9 +840,24 @@ For the selected index set of non-zero slope parameters $\widehat A=\{j:|\wideha
 \mathrm{FNR}=\frac{\mathrm{FN}}{|A^*|},\qquad
 \mathrm{Exact}=\mathds{1}\{\widehat A=A^*\}.
 \]
-The signed attained-radius error is $\|\widehat\beta\|_1-\|\beta^*\|_1$; under each correctly specified simulation, the data-generating slope $\beta^*$ is also the unregularised population minimiser $\beta^\circ$. The selected grid radius $C_{\rm sel}$ and attained fitted radius are reported separately because the constraint can be inactive. Predictive performance is evaluated only on the independent test sample. For Gaussian regression, test deviance is squared error divided by $\sigma^2$; for logistic and Poisson regression, it is the usual mean model deviance. No support or test-sample quantity enters the PanIC-CF calibration.
+The zero/non-zero classification is applied to the fitted path coefficient after radius interpolation, without an additional magnitude threshold. The signed attained-radius error is $\|\widehat\beta\|_1-\|\beta^*\|_1$; under each correctly specified simulation, the data-generating slope $\beta^*$ is also the unregularised population minimiser $\beta^\circ$. Table \ref{Table: revised primary performance} reports this error and the selected grid radius $C_{\rm sel}$; the attained radius is therefore recoverable as the error plus $C^\star$. The two radii can differ when the constraint is inactive. Predictive performance is evaluated only on the independent test sample. For Gaussian regression, test deviance is the mean squared error divided by $\sigma^2$. For logistic regression, with fitted probabilities $\widehat p_i$, it is
+\[
+\frac{2}{n_{\rm test}}\sum_{i=1}^{n_{\rm test}}
+\left[
+Y_i\log\left(\frac{Y_i}{\widehat p_i}\right)
++(1-Y_i)\log\left\{\frac{1-Y_i}{1-\widehat p_i}\right\}
+\right],
+\]
+and for Poisson regression, with fitted means $\widehat\mu_i$, it is
+\[
+\frac{2}{n_{\rm test}}\sum_{i=1}^{n_{\rm test}}
+\left[
+Y_i\log\left(\frac{Y_i}{\widehat\mu_i}\right)-(Y_i-\widehat\mu_i)
+\right].
+\]
+We use the convention $0\log0=0$. No support or test-sample quantity enters the PanIC-CF calibration. For any reported Monte Carlo mean, the MCSE is the sample standard deviation across independent replications divided by the square root of the number of replications; paired contrasts are formed within replication before this calculation.
 
-The production comparison was locked to a bounded joint claim against CV-min. For setting $s\in\{1,\ldots,7\}$ and paired replication $r$, let $W^{\rm P}_{s,r}$ and $W^{\rm C}_{s,r}$ be the total support errors $\mathrm{FP}+\mathrm{FN}$ for PanIC-CF and CV-min, and let $D^{\rm P}_{s,r}$ and $D^{\rm C}_{s,r}$ be their independent-test deviances. The two equal-weight seven-setting estimands are
+The primary comparison tests a joint claim against CV. For setting $s\in\{1,\ldots,7\}$ and paired replication $r$, let $W^{\rm P}_{s,r}$ and $W^{\rm C}_{s,r}$ be the total support errors $\mathrm{FP}+\mathrm{FN}$ for PanIC-CF and CV, and let $D^{\rm P}_{s,r}$ and $D^{\rm C}_{s,r}$ be their independent-test deviances. The two equal-weight seven-setting estimands are
 \[
 \Delta_{\rm S}
 =\frac17\sum_{s=1}^7
@@ -872,18 +869,16 @@ The production comparison was locked to a bounded joint claim against CV-min. Fo
 \frac{D^{\rm P}_{s,r}-D^{\rm C}_{s,r}}{D^{\rm C}_{s,r}}
 \right).
 \]
-The computational rule evaluates the relative contrast only when every comparator deviance is finite and strictly positive. A nonfinite or nonpositive value causes analysis and verification to fail before the joint decision is formed; no replication is discarded and no artificial denominator is substituted. All 7,000 production CV-min deviances passed this check, with minimum $0.91004$ and maximum $1.30181$. All realised relative contrasts were finite, their largest absolute value was $0.04451$, and their sample second moment was $7.62\times10^{-6}$. The normal-approximation interpretation additionally requires $D^{\rm C}_{s,r}>0$ almost surely and a finite second moment of the relative contrast under the stated simulation design; the finite production audit checks the realised calculation rather than purporting to prove those population conditions.
-
-The support component declares superiority only when the normal-approximate one-sided $95\%$ upper Monte Carlo bound for $\Delta_{\rm S}$ is below zero. The prediction component declares noninferiority only when the corresponding upper bound for $\Delta_{\rm D}$ is below $0.001$, a $0.1\%$ relative-deviance margin. Scenario streams are disjoint, and the MCSE of each equal-weight estimate combines the seven scenario-specific paired MCSEs in quadrature and divides by seven. For either contrast, the normal-approximate upper bound is $\widehat\Delta+\Phi^{-1}(0.95)\widehat{\operatorname{MCSE}}(\widehat\Delta)$, where $\Phi$ is the standard normal distribution function. Its asymptotic Monte Carlo interpretation requires independent replications and a finite variance for the contrast. The joint conclusion requires both components to pass and is an intersection--union rule for the alternative $\Delta_{\rm S}<0$ and $\Delta_{\rm D}<0.001$.
+The analysis requires every CV test deviance to be finite and strictly positive. All 7,000 denominators satisfied this requirement, with minimum $0.90463$ and maximum $1.31098$; all realised relative contrasts were finite.
 
 \subsection{Primary results}\label{Sect: Discussion}
 Tables \ref{Table: revised primary support} and
 \ref{Table: revised primary performance} report the support, radius, and
-independent-test summaries for the prespecified methods.
+independent-test summaries for the assessed methods.
 % BEGIN PANIC INLINE TABLE: table_primary_support.tex
 \begin{table}[H]
 \centering
-\caption{Support recovery for PanIC-CF and the prespecified comparators. Entries are Monte Carlo means with Monte Carlo standard errors in parentheses over 1,000 attempted replications. PanIC-CF-original is a same-path sensitivity analysis, and CV-1SE is a secondary trade-off comparator. FPR and FNR use the ten inactive and ten active slopes, respectively; a slope is selected when $\lvert\widehat\beta_j\rvert>10^{-8}$. The active-count comparator is labelled BIC-like in every family for compactness, but its logistic and Poisson rows are exploratory analogues outside the scope of Proposition \ref{Prop: BIC-like consistency}.}
+\caption{Support recovery for the assessed methods over 1,000 replications; parentheses give Monte Carlo standard errors. FPR and FNR use the ten inactive and ten active slopes, respectively.}
 \label{Table: revised primary support}
 \begin{adjustbox}{width=\textwidth}
 \scriptsize
@@ -891,41 +886,27 @@ independent-test summaries for the prespecified methods.
 \hline
 Setting & Method & FP & FN & FPR & FNR & Exact & Total support error \\
 \hline
-Gaussian independent, $n=500$ & PanIC-CF & 5.86 (0.07) & 0.00 (0.00) & 0.586 (0.007) & 0.000 (0.000) & 0.000 (0.000) & 5.86 (0.07) \\
- & PanIC-CF-original & 6.12 (0.07) & 0.00 (0.00) & 0.612 (0.007) & 0.000 (0.000) & 0.000 (0.000) & 6.12 (0.07) \\
- & BIC-like & 2.58 (0.06) & 0.00 (0.00) & 0.258 (0.006) & 0.000 (0.000) & 0.118 (0.010) & 2.58 (0.06) \\
- & CV-min & 6.60 (0.06) & 0.00 (0.00) & 0.660 (0.006) & 0.000 (0.000) & 0.000 (0.000) & 6.60 (0.06) \\
- & CV-1SE & 1.21 (0.04) & 0.00 (0.00) & 0.121 (0.004) & 0.000 (0.000) & 0.399 (0.015) & 1.21 (0.04) \\
-Gaussian independent, $n=2000$ & PanIC-CF & 6.11 (0.07) & 0.00 (0.00) & 0.611 (0.007) & 0.000 (0.000) & 0.004 (0.002) & 6.11 (0.07) \\
- & PanIC-CF-original & 6.39 (0.07) & 0.00 (0.00) & 0.639 (0.007) & 0.000 (0.000) & 0.003 (0.002) & 6.39 (0.07) \\
- & BIC-like & 2.18 (0.05) & 0.00 (0.00) & 0.218 (0.005) & 0.000 (0.000) & 0.160 (0.012) & 2.18 (0.05) \\
- & CV-min & 6.58 (0.07) & 0.00 (0.00) & 0.658 (0.007) & 0.000 (0.000) & 0.002 (0.001) & 6.58 (0.07) \\
- & CV-1SE & 0.52 (0.03) & 0.00 (0.00) & 0.052 (0.003) & 0.000 (0.000) & 0.667 (0.015) & 0.52 (0.03) \\
-Logistic independent, $n=500$ & PanIC-CF & 6.11 (0.06) & 0.05 (0.01) & 0.611 (0.006) & 0.005 (0.001) & 0.000 (0.000) & 6.15 (0.06) \\
- & PanIC-CF-original & 6.36 (0.06) & 0.04 (0.01) & 0.636 (0.006) & 0.004 (0.001) & 0.000 (0.000) & 6.40 (0.06) \\
- & BIC-like & 1.82 (0.06) & 1.58 (0.10) & 0.182 (0.006) & 0.158 (0.010) & 0.067 (0.008) & 3.41 (0.09) \\
- & CV-min & 6.28 (0.06) & 0.05 (0.01) & 0.628 (0.006) & 0.005 (0.001) & 0.001 (0.001) & 6.33 (0.06) \\
- & CV-1SE & 1.76 (0.05) & 0.53 (0.03) & 0.176 (0.005) & 0.053 (0.003) & 0.106 (0.010) & 2.29 (0.05) \\
-Logistic independent, $n=2000$ & PanIC-CF & 6.74 (0.06) & 0.00 (0.00) & 0.674 (0.006) & 0.000 (0.000) & 0.001 (0.001) & 6.74 (0.06) \\
- & PanIC-CF-original & 7.04 (0.06) & 0.00 (0.00) & 0.704 (0.006) & 0.000 (0.000) & 0.001 (0.001) & 7.04 (0.06) \\
- & BIC-like & 2.35 (0.05) & 0.00 (0.00) & 0.235 (0.005) & 0.000 (0.000) & 0.106 (0.010) & 2.35 (0.05) \\
- & CV-min & 6.97 (0.06) & 0.00 (0.00) & 0.697 (0.006) & 0.000 (0.000) & 0.000 (0.000) & 6.97 (0.06) \\
- & CV-1SE & 1.28 (0.04) & 0.00 (0.00) & 0.128 (0.004) & 0.000 (0.000) & 0.341 (0.015) & 1.28 (0.04) \\
-Gaussian AR(1), $n=1000$ & PanIC-CF & 5.84 (0.06) & 0.00 (0.00) & 0.584 (0.006) & 0.000 (0.000) & 0.004 (0.002) & 5.84 (0.06) \\
- & PanIC-CF-original & 6.15 (0.06) & 0.00 (0.00) & 0.615 (0.006) & 0.000 (0.000) & 0.004 (0.002) & 6.15 (0.06) \\
- & BIC-like & 2.38 (0.05) & 0.00 (0.00) & 0.238 (0.005) & 0.000 (0.000) & 0.116 (0.010) & 2.38 (0.05) \\
- & CV-min & 6.57 (0.06) & 0.00 (0.00) & 0.656 (0.006) & 0.000 (0.000) & 0.001 (0.001) & 6.57 (0.06) \\
- & CV-1SE & 0.85 (0.03) & 0.00 (0.00) & 0.085 (0.003) & 0.000 (0.000) & 0.480 (0.016) & 0.85 (0.03) \\
-Logistic AR(1), $n=1000$ & PanIC-CF & 6.51 (0.06) & 0.00 (0.00) & 0.651 (0.006) & 0.000 (0.000) & 0.000 (0.000) & 6.51 (0.06) \\
- & PanIC-CF-original & 6.77 (0.06) & 0.00 (0.00) & 0.677 (0.006) & 0.000 (0.000) & 0.000 (0.000) & 6.77 (0.06) \\
- & BIC-like & 2.42 (0.05) & 0.00 (0.00) & 0.242 (0.005) & 0.000 (0.000) & 0.129 (0.011) & 2.42 (0.05) \\
- & CV-min & 6.67 (0.06) & 0.00 (0.00) & 0.667 (0.006) & 0.000 (0.000) & 0.000 (0.000) & 6.67 (0.06) \\
- & CV-1SE & 1.63 (0.04) & 0.00 (0.00) & 0.163 (0.004) & 0.000 (0.000) & 0.216 (0.013) & 1.63 (0.04) \\
-Poisson independent, $n=1000$ & PanIC-CF & 6.22 (0.07) & 0.00 (0.00) & 0.622 (0.007) & 0.000 (0.000) & 0.006 (0.002) & 6.22 (0.07) \\
- & PanIC-CF-original & 6.42 (0.07) & 0.00 (0.00) & 0.642 (0.007) & 0.000 (0.000) & 0.005 (0.002) & 6.42 (0.07) \\
- & BIC-like & 2.62 (0.06) & 0.00 (0.00) & 0.263 (0.006) & 0.000 (0.000) & 0.101 (0.010) & 2.62 (0.06) \\
- & CV-min & 6.77 (0.07) & 0.00 (0.00) & 0.677 (0.007) & 0.000 (0.000) & 0.002 (0.001) & 6.77 (0.07) \\
- & CV-1SE & 0.02 (0.01) & 0.00 (0.00) & 0.002 (0.001) & 0.000 (0.000) & 0.983 (0.004) & 0.02 (0.01) \\
+Gaussian independent, $n=500$ & PanIC-CF & 5.85 (0.06) & 0.00 (0.00) & 0.585 (0.006) & 0.000 (0.000) & 0.002 (0.001) & 5.85 (0.06) \\
+ & BIC-like & 2.61 (0.05) & 0.00 (0.00) & 0.261 (0.005) & 0.000 (0.000) & 0.089 (0.009) & 2.61 (0.05) \\
+ & CV & 6.58 (0.06) & 0.00 (0.00) & 0.658 (0.006) & 0.000 (0.000) & 0.000 (0.000) & 6.58 (0.06) \\
+Gaussian independent, $n=2000$ & PanIC-CF & 6.24 (0.07) & 0.00 (0.00) & 0.624 (0.007) & 0.000 (0.000) & 0.002 (0.001) & 6.24 (0.07) \\
+ & BIC-like & 2.34 (0.05) & 0.00 (0.00) & 0.234 (0.005) & 0.000 (0.000) & 0.147 (0.011) & 2.34 (0.05) \\
+ & CV & 6.74 (0.07) & 0.00 (0.00) & 0.674 (0.007) & 0.000 (0.000) & 0.001 (0.001) & 6.74 (0.07) \\
+Logistic independent, $n=500$ & PanIC-CF & 6.18 (0.06) & 0.05 (0.01) & 0.618 (0.006) & 0.005 (0.001) & 0.004 (0.002) & 6.23 (0.06) \\
+ & BIC-like & 1.87 (0.06) & 1.61 (0.10) & 0.187 (0.006) & 0.162 (0.010) & 0.064 (0.008) & 3.48 (0.09) \\
+ & CV & 6.40 (0.06) & 0.05 (0.01) & 0.640 (0.006) & 0.005 (0.001) & 0.000 (0.000) & 6.44 (0.06) \\
+Logistic independent, $n=2000$ & PanIC-CF & 6.56 (0.06) & 0.00 (0.00) & 0.656 (0.006) & 0.000 (0.000) & 0.003 (0.002) & 6.56 (0.06) \\
+ & BIC-like & 2.40 (0.05) & 0.00 (0.00) & 0.240 (0.005) & 0.000 (0.000) & 0.106 (0.010) & 2.40 (0.05) \\
+ & CV & 6.82 (0.06) & 0.00 (0.00) & 0.682 (0.006) & 0.000 (0.000) & 0.001 (0.001) & 6.82 (0.06) \\
+Gaussian AR(1), $n=1000$ & PanIC-CF & 5.91 (0.06) & 0.00 (0.00) & 0.591 (0.006) & 0.000 (0.000) & 0.005 (0.002) & 5.91 (0.06) \\
+ & BIC-like & 2.33 (0.05) & 0.00 (0.00) & 0.233 (0.005) & 0.000 (0.000) & 0.133 (0.011) & 2.33 (0.05) \\
+ & CV & 6.49 (0.07) & 0.00 (0.00) & 0.648 (0.007) & 0.000 (0.000) & 0.002 (0.001) & 6.49 (0.07) \\
+Logistic AR(1), $n=1000$ & PanIC-CF & 6.43 (0.06) & 0.00 (0.00) & 0.643 (0.006) & 0.000 (0.000) & 0.001 (0.001) & 6.43 (0.06) \\
+ & BIC-like & 2.44 (0.06) & 0.00 (0.00) & 0.244 (0.006) & 0.000 (0.000) & 0.125 (0.010) & 2.44 (0.06) \\
+ & CV & 6.62 (0.06) & 0.00 (0.00) & 0.662 (0.006) & 0.000 (0.000) & 0.001 (0.001) & 6.62 (0.06) \\
+Poisson independent, $n=1000$ & PanIC-CF & 6.37 (0.07) & 0.00 (0.00) & 0.637 (0.007) & 0.000 (0.000) & 0.004 (0.002) & 6.37 (0.07) \\
+ & BIC-like & 2.61 (0.05) & 0.00 (0.00) & 0.261 (0.005) & 0.000 (0.000) & 0.089 (0.009) & 2.61 (0.05) \\
+ & CV & 6.85 (0.07) & 0.00 (0.00) & 0.685 (0.007) & 0.000 (0.000) & 0.000 (0.000) & 6.85 (0.07) \\
 \hline
 \end{tabular}
 \end{adjustbox}
@@ -936,49 +917,35 @@ Poisson independent, $n=1000$ & PanIC-CF & 6.22 (0.07) & 0.00 (0.00) & 0.622 (0.
 % BEGIN PANIC INLINE TABLE: table_primary_performance.tex
 \begin{table}[H]
 \centering
-\caption{Selected and attained constraint radii and independent-test performance. Entries are Monte Carlo means with Monte Carlo standard errors in parentheses over 1,000 attempted replications. Test deviance is evaluated on an independent sample of size 2,000. Signed radius error is $\lVert\widehat\beta\rVert_1-C^\star$. PanIC-CF-original is a same-path sensitivity analysis, and CV-1SE is a secondary trade-off comparator. The active-count comparator is labelled BIC-like in every family for compactness, but its logistic and Poisson rows are exploratory analogues outside the scope of Proposition \ref{Prop: BIC-like consistency}.}
+\caption{Selected radii and independent-test performance for the assessed methods over 1,000 replications; parentheses give Monte Carlo standard errors.}
 \label{Table: revised primary performance}
 \begin{adjustbox}{width=\textwidth}
 \scriptsize
-\begin{tabular}{llrrrr}
+\begin{tabular}{llrrr}
 \hline
-Setting & Method & Signed radius error & $C_{\rm sel}$ & $\lVert\widehat\beta\rVert_1$ & Test deviance \\
+Setting & Method & Signed attained-radius error & $C_{\rm sel}$ & Test deviance \\
 \hline
-Gaussian independent, $n=500$ & PanIC-CF & -0.071 (0.007) & 3.091 (0.007) & 3.091 (0.007) & 1.0364 (0.0011) \\
- & PanIC-CF-original & -0.042 (0.007) & 3.120 (0.007) & 3.120 (0.007) & 1.0362 (0.0011) \\
- & BIC-like & -0.364 (0.008) & 2.799 (0.008) & 2.799 (0.008) & 1.0482 (0.0012) \\
- & CV-min & 0.016 (0.007) & 3.179 (0.007) & 3.179 (0.007) & 1.0362 (0.0011) \\
- & CV-1SE & -0.750 (0.007) & 2.412 (0.007) & 2.412 (0.007) & 1.0864 (0.0015) \\
-Gaussian independent, $n=2000$ & PanIC-CF & -0.027 (0.004) & 3.135 (0.004) & 3.135 (0.004) & 1.0086 (0.0010) \\
- & PanIC-CF-original & -0.010 (0.004) & 3.152 (0.004) & 3.152 (0.004) & 1.0086 (0.0010) \\
- & BIC-like & -0.233 (0.004) & 2.930 (0.004) & 2.930 (0.004) & 1.0132 (0.0010) \\
- & CV-min & 0.003 (0.004) & 3.165 (0.004) & 3.165 (0.004) & 1.0085 (0.0010) \\
- & CV-1SE & -0.490 (0.004) & 2.672 (0.004) & 2.672 (0.004) & 1.0307 (0.0011) \\
-Logistic independent, $n=500$ & PanIC-CF & -0.189 (0.018) & 2.973 (0.018) & 2.973 (0.018) & 1.2363 (0.0007) \\
- & PanIC-CF-original & -0.114 (0.018) & 3.048 (0.018) & 3.048 (0.018) & 1.2362 (0.0007) \\
- & BIC-like & -1.247 (0.030) & 1.915 (0.030) & 1.915 (0.030) & 1.2647 (0.0016) \\
- & CV-min & -0.129 (0.017) & 3.034 (0.017) & 3.034 (0.017) & 1.2359 (0.0007) \\
- & CV-1SE & -1.548 (0.014) & 1.614 (0.014) & 1.614 (0.014) & 1.2647 (0.0008) \\
-Logistic independent, $n=2000$ & PanIC-CF & -0.052 (0.008) & 3.111 (0.008) & 3.111 (0.008) & 1.2089 (0.0005) \\
- & PanIC-CF-original & -0.008 (0.008) & 3.155 (0.008) & 3.155 (0.008) & 1.2089 (0.0005) \\
- & BIC-like & -0.570 (0.010) & 2.593 (0.010) & 2.593 (0.010) & 1.2129 (0.0005) \\
- & CV-min & -0.007 (0.008) & 3.155 (0.008) & 3.155 (0.008) & 1.2090 (0.0005) \\
- & CV-1SE & -0.972 (0.008) & 2.190 (0.008) & 2.190 (0.008) & 1.2212 (0.0004) \\
-Gaussian AR(1), $n=1000$ & PanIC-CF & -0.067 (0.006) & 3.911 (0.006) & 3.911 (0.006) & 1.0200 (0.0011) \\
- & PanIC-CF-original & -0.036 (0.006) & 3.941 (0.006) & 3.941 (0.006) & 1.0198 (0.0011) \\
- & BIC-like & -0.363 (0.007) & 3.615 (0.007) & 3.615 (0.007) & 1.0268 (0.0011) \\
- & CV-min & 0.002 (0.006) & 3.979 (0.006) & 3.979 (0.006) & 1.0197 (0.0011) \\
- & CV-1SE & -0.795 (0.007) & 3.183 (0.007) & 3.183 (0.007) & 1.0554 (0.0013) \\
-Logistic AR(1), $n=1000$ & PanIC-CF & -0.096 (0.015) & 3.882 (0.015) & 3.882 (0.015) & 1.2176 (0.0006) \\
- & PanIC-CF-original & -0.030 (0.015) & 3.948 (0.015) & 3.948 (0.015) & 1.2176 (0.0006) \\
- & BIC-like & -0.902 (0.017) & 3.075 (0.017) & 3.075 (0.017) & 1.2241 (0.0006) \\
- & CV-min & -0.045 (0.015) & 3.933 (0.015) & 3.933 (0.015) & 1.2176 (0.0006) \\
- & CV-1SE & -1.546 (0.012) & 2.432 (0.012) & 2.432 (0.012) & 1.2368 (0.0006) \\
-Poisson independent, $n=1000$ & PanIC-CF & -0.027 (0.004) & 3.135 (0.004) & 3.135 (0.004) & 1.0756 (0.0010) \\
- & PanIC-CF-original & -0.015 (0.004) & 3.147 (0.004) & 3.147 (0.004) & 1.0755 (0.0010) \\
- & BIC-like & -0.215 (0.004) & 2.947 (0.004) & 2.947 (0.004) & 1.0843 (0.0010) \\
- & CV-min & 0.007 (0.004) & 3.169 (0.004) & 3.169 (0.004) & 1.0756 (0.0010) \\
- & CV-1SE & -1.147 (0.007) & 2.015 (0.007) & 2.015 (0.007) & 1.3491 (0.0038) \\
+Gaussian independent, $n=500$ & PanIC-CF & -0.068 (0.007) & 3.094 (0.007) & 1.0400 (0.0011) \\
+ & BIC-like & -0.365 (0.008) & 2.798 (0.008) & 1.0514 (0.0013) \\
+ & CV & 0.013 (0.007) & 3.175 (0.007) & 1.0397 (0.0011) \\
+Gaussian independent, $n=2000$ & PanIC-CF & -0.024 (0.003) & 3.138 (0.003) & 1.0084 (0.0010) \\
+ & BIC-like & -0.223 (0.004) & 2.939 (0.004) & 1.0126 (0.0010) \\
+ & CV & 0.007 (0.004) & 3.169 (0.004) & 1.0084 (0.0010) \\
+Logistic independent, $n=500$ & PanIC-CF & -0.166 (0.018) & 2.997 (0.018) & 1.2362 (0.0007) \\
+ & BIC-like & -1.240 (0.031) & 1.923 (0.031) & 1.2654 (0.0016) \\
+ & CV & -0.105 (0.018) & 3.057 (0.018) & 1.2359 (0.0007) \\
+Logistic independent, $n=2000$ & PanIC-CF & -0.078 (0.008) & 3.084 (0.008) & 1.2073 (0.0005) \\
+ & BIC-like & -0.572 (0.010) & 2.590 (0.010) & 1.2116 (0.0005) \\
+ & CV & -0.038 (0.009) & 3.124 (0.009) & 1.2073 (0.0005) \\
+Gaussian AR(1), $n=1000$ & PanIC-CF & -0.067 (0.006) & 3.911 (0.006) & 1.0190 (0.0010) \\
+ & BIC-like & -0.369 (0.007) & 3.609 (0.007) & 1.0264 (0.0011) \\
+ & CV & -0.005 (0.006) & 3.973 (0.006) & 1.0189 (0.0010) \\
+Logistic AR(1), $n=1000$ & PanIC-CF & -0.095 (0.015) & 3.883 (0.015) & 1.2155 (0.0006) \\
+ & BIC-like & -0.874 (0.018) & 3.104 (0.018) & 1.2221 (0.0006) \\
+ & CV & -0.036 (0.015) & 3.942 (0.015) & 1.2155 (0.0006) \\
+Poisson independent, $n=1000$ & PanIC-CF & -0.024 (0.004) & 3.138 (0.004) & 1.0744 (0.0009) \\
+ & BIC-like & -0.215 (0.004) & 2.947 (0.004) & 1.0829 (0.0010) \\
+ & CV & 0.006 (0.004) & 3.168 (0.004) & 1.0743 (0.0009) \\
 \hline
 \end{tabular}
 \end{adjustbox}
@@ -986,24 +953,19 @@ Poisson independent, $n=1000$ & PanIC-CF & -0.027 (0.004) & 3.135 (0.004) & 3.13
 % END PANIC INLINE TABLE: table_primary_performance.tex
 
 
-The reported summaries give different orderings for support and prediction. For the seven paired PanIC-CF versus CV-min comparisons, the mean total-support-error differences (PanIC-CF minus CV-min) and their Monte Carlo standard errors (MCSEs), in table order, were $-0.744$ ($0.047$), $-0.478$ ($0.057$), $-0.180$ ($0.043$), $-0.230$ ($0.041$), $-0.727$ ($0.049$), $-0.158$ ($0.039$), and $-0.550$ ($0.055$). These scenario summaries are secondary and are not simultaneous confidence statements. For the prespecified equal-weight primary estimand, $\widehat\Delta_{\rm S}=-0.43814$ with MCSE $0.01800$ and one-sided $95\%$ upper Monte Carlo bound $-0.40854$. Thus the support-superiority component against CV-min passes.
-
-For the prediction guardrail, $\widehat\Delta_{\rm D}=0.000160$ with MCSE $0.000033$ and one-sided $95\%$ upper bound $0.000214$, which is below the prespecified $0.001$ margin. The point estimate and upper bound correspond to average relative test-deviance increases of approximately $0.0160\%$ and $0.0214\%$, respectively. Together with the support result, both components therefore pass the locked joint criterion for this simulation design, subject to the complete-pairing and denominator-validity rule stated above.
-
-The two prespecified endpoint decisions are collected in
-Table \ref{Table: confirmatory decision}.
+PanIC-CF had lower mean total support error than CV in each of the seven settings. For the equal-weight endpoint, $\widehat\Delta_{\rm S}=-0.42186$ and its one-sided $95\%$ upper Monte Carlo bound was $-0.39190$, so the support criterion passed. The relative test-deviance endpoint also passed the $0.001$ noninferiority margin, as summarised in Table \ref{Table: confirmatory decision}. The setting-specific differences are descriptive and are not simultaneous confidence statements.
 % BEGIN PANIC INLINE TABLE: table_confirmatory_decision.tex
 \begin{table}[H]
 \centering
-\caption{Prespecified joint confirmatory comparison of PanIC-CF with CV-min. The two endpoints are equal-weight means over the seven settings; the relative-deviance endpoint is dimensionless. The joint conclusion requires both one-sided criteria to hold.}
+\caption{Joint comparison of PanIC-CF with CV. The two endpoints are equal-weight means over the seven settings; the relative-deviance endpoint is dimensionless. The joint conclusion requires both one-sided criteria to hold.}
 \label{Table: confirmatory decision}
 \begin{adjustbox}{width=\textwidth}
 \begin{tabular}{lrrrr}
 \hline
 Endpoint & Estimate & MCSE & One-sided 95\% upper bound & Criterion \\
 \hline
-Total support error, $\Delta_{\rm S}$ & -0.43814 & 0.01800 & -0.40854 & $<0$ \\
-Relative test deviance, $\Delta_{\rm D}$ & 0.000160 & 0.000033 & 0.000214 & $<0.001$ \\
+Total support error, $\Delta_{\rm S}$ & -0.42186 & 0.01821 & -0.39190 & $<0$ \\
+Relative test deviance, $\Delta_{\rm D}$ & 0.000120 & 0.000032 & 0.000173 & $<0.001$ \\
 \hline
 \end{tabular}
 \end{adjustbox}
@@ -1011,31 +973,31 @@ Relative test deviance, $\Delta_{\rm D}$ & 0.000160 & 0.000033 & 0.000214 & $<0.
 % END PANIC INLINE TABLE: table_confirmatory_decision.tex
 
 
-The same-path PanIC-CF-original sensitivity had higher mean support error than PanIC-CF in every setting, by $0.206$ to $0.315$ errors per replication, while their mean test deviances were close. CV-1SE was much sparser and had lower mean support error than PanIC-CF in every setting, but its mean test deviance exceeded that of CV-min in every setting; it is therefore reported as a different support--prediction trade-off and is not the comparator in the primary joint claim. The rows labelled BIC-like were also substantially sparser, with mean total support errors from $2.18$ to $3.41$ and exact-recovery proportions from $0.067$ to $0.160$, at the cost of larger mean test deviance than CV-min. In the logistic $n=500$ setting, the non-Gaussian analogue based on non-zero parameter counts had a mean of $1.58$ false negatives. These reported comparisons do not give a universal ranking: matching the unregularised population radius, recovering a sparse support, and minimising predictive loss are different objectives. In particular, the first-order constraint-level consistency target is not a variable-selection guarantee.
+The rows labelled BIC-like had mean total support errors from $2.33$ to $3.48$ and exact-recovery proportions from $0.064$ to $0.147$, together with larger mean test deviance than CV. In the logistic $n=500$ setting, the non-Gaussian analogue based on non-zero parameter counts had a mean of $1.61$ false negatives. These comparisons reflect different support--prediction trade-offs and do not establish a universal ranking: matching the unregularised population radius, recovering a sparse support, and minimising predictive loss are distinct objectives.
 \end{bluechange}
 
 \begin{bluechange}
 \subsection{Calibration and numerical diagnostics}
-Table \ref{Table: revised calibration} reports the calibration targets,
-selected multipliers, and failure diagnostics.
+Table \ref{Table: revised calibration} reports the calibration targets and
+selected multipliers.
 % BEGIN PANIC INLINE TABLE: table_calibration.tex
 \begin{table}[H]
 \centering
-\caption{Calibration targets, selected multipliers, and failure diagnostics for PanIC-CF. The ten raw cross-signed targets are averaged within each data-set replication before the across-replication mean and Monte Carlo standard error in parentheses are computed over $N=1{,}000$ replications. Raw bias is the mean target minus $C^\star$; multiplier entries are median [first quartile, third quartile]. Calibration-failure and prespecified-default columns count replications, whereas projections count calibration rows.}
+\caption{PanIC-CF calibration over $N=1{,}000$ replications. Raw cross-signed targets are first averaged within each data-set replication; parentheses give Monte Carlo standard errors across replications. Raw bias is the mean target minus $C^\star$; multiplier entries are median [Q1,Q3].}
 \label{Table: revised calibration}
 \begin{adjustbox}{width=\textwidth}
 \scriptsize
-\begin{tabular}{lrrrlrrr}
+\begin{tabular}{lrrrl}
 \hline
-Setting & $C^\star$ & Mean raw target & Raw bias & $\widehat\kappa$ [Q1,Q3] & Cal. failures & Defaults & Projections \\
+Setting & $C^\star$ & Mean raw target & Raw bias & $\widehat\kappa$ [Q1,Q3] \\
 \hline
-Gaussian independent, $n=500$ & 3.162 & 3.165 (0.006) & 0.003 (0.006) & 8.577 [6.310, 11.659] & 0 & 0 & 0 \\
-Gaussian independent, $n=2000$ & 3.162 & 3.160 (0.003) & -0.002 (0.003) & 6.310 [6.310, 8.577] & 0 & 0 & 0 \\
-Logistic independent, $n=500$ & 3.162 & 3.401 (0.019) & 0.238 (0.019) & 1.848 [1.359, 1.848] & 0 & 0 & 1 \\
-Logistic independent, $n=2000$ & 3.162 & 3.249 (0.008) & 0.087 (0.008) & 1.359 [1.359, 1.848] & 0 & 0 & 0 \\
-Gaussian AR(1), $n=1000$ & 3.978 & 3.975 (0.006) & -0.003 (0.006) & 6.310 [4.642, 8.577] & 0 & 0 & 0 \\
-Logistic AR(1), $n=1000$ & 3.978 & 4.179 (0.015) & 0.202 (0.015) & 1.359 [1.000, 1.359] & 0 & 0 & 0 \\
-Poisson independent, $n=1000$ & 3.162 & 3.159 (0.003) & -0.003 (0.003) & 4.642 [4.642, 6.310] & 0 & 0 & 0 \\
+Gaussian independent, $n=500$ & 3.162 & 3.166 (0.006) & 0.003 (0.006) & 8.577 [6.310, 11.659] \\
+Gaussian independent, $n=2000$ & 3.162 & 3.166 (0.003) & 0.003 (0.003) & 6.310 [6.310, 8.577] \\
+Logistic independent, $n=500$ & 3.162 & 3.406 (0.019) & 0.244 (0.019) & 1.848 [1.359, 1.848] \\
+Logistic independent, $n=2000$ & 3.162 & 3.221 (0.008) & 0.059 (0.008) & 1.359 [1.359, 1.848] \\
+Gaussian AR(1), $n=1000$ & 3.978 & 3.967 (0.006) & -0.011 (0.006) & 6.310 [4.642, 8.577] \\
+Logistic AR(1), $n=1000$ & 3.978 & 4.193 (0.015) & 0.215 (0.015) & 1.359 [1.000, 1.359] \\
+Poisson independent, $n=1000$ & 3.162 & 3.160 (0.003) & -0.002 (0.003) & 4.642 [4.642, 6.310] \\
 \hline
 \end{tabular}
 \end{adjustbox}
@@ -1043,7 +1005,7 @@ Poisson independent, $n=1000$ & 3.162 & 3.159 (0.003) & -0.003 (0.003) & 4.642 [
 % END PANIC INLINE TABLE: table_calibration.tex
 
 
-Across the 7,000 primary replications, no fitting or calibration failure or solver warning was reported, and the multiplier default was not used. One of the 70,000 raw cross-signed targets fell below zero and was projected onto the scoring interval. Neither PanIC-CF multiplier variant selected a multiplier or radius endpoint. The logistic BIC-like comparator selected $C=0$ in 95 of the 1,000 replications at $n=500$. Calibration diagnostics include the pilot radii and selected multipliers. The remaining numerical checks are supplied with the code.
+Across the 7,000 replications from Section \ref{Sect: Discussion}, no fitting or calibration failure, solver warning, or multiplier default was recorded, and no raw cross-signed target required nontrivial projection. PanIC-CF selected neither a multiplier nor a radius endpoint. The logistic BIC-like comparator selected $C=0$ in 97 of the 1,000 replications at $n=500$. Calibration diagnostics include the pilot radii and selected multipliers. The remaining numerical checks are supplied with the code.
 
 Direct-fit validation and the separate fixed-shape Gamma check are documented with the computational materials referenced in Appendix \ref{App: reproducibility}.
 
@@ -1051,29 +1013,23 @@ Direct-fit validation and the separate fixed-shape Gamma check are documented wi
 % BEGIN PANIC INLINE TABLE: table_grid_sensitivity.tex
 \begin{table}[H]
 \centering
-\caption{Radius-grid sensitivity in the independent Gaussian setting with $n=1000$ and common random numbers across $N=500$ replications. Every grid spans $[0,20]$. Entries are means with Monte Carlo standard errors in parentheses. PanIC-CF-original and PanIC-CF share fitted paths, as do CV-min and CV-1SE. Shared runtime is the end-to-end time for the full-sample path, ten half-sample calibration directions, and five ordinary CV folds.}
+\caption{Radius-grid sensitivity for the assessed methods in the independent Gaussian setting with $n=1000$ and $N=500$ common-random-number replications. Each grid spans $[0,20]$; entries are means with Monte Carlo standard errors in parentheses.}
 \label{Table: grid sensitivity}
 \begin{adjustbox}{width=\textwidth}
 \scriptsize
-\begin{tabular}{rrlrrrrr}
+\begin{tabular}{rrlrrrr}
 \hline
-$m$ & Spacing & Method & Total support error & Exact & Test deviance & Selected radius & Shared runtime (s) \\
+$m$ & Spacing & Method & Total support error & Exact & Test deviance & Selected radius \\
 \hline
-61 & 0.333 & PanIC-CF & 6.20 (0.11) & 0.008 (0.004) & 1.020 (0.002) & 3.132 (0.008) & 0.0674 (0.0004) \\
-61 & 0.333 & PanIC-CF-original & 6.45 (0.11) & 0.006 (0.003) & 1.020 (0.002) & 3.152 (0.008) & 0.0674 (0.0004) \\
-61 & 0.333 & BIC-like & 2.68 (0.08) & 0.124 (0.015) & 1.027 (0.002) & 2.866 (0.008) & 0.0674 (0.0004) \\
-61 & 0.333 & CV-min & 6.81 (0.10) & 0.006 (0.003) & 1.019 (0.002) & 3.183 (0.008) & 0.0674 (0.0004) \\
-61 & 0.333 & CV-1SE & 1.27 (0.06) & 0.372 (0.022) & 1.044 (0.002) & 2.642 (0.008) & 0.0674 (0.0004) \\
-121 & 0.167 & PanIC-CF & 6.06 (0.09) & 0.008 (0.004) & 1.019 (0.002) & 3.122 (0.007) & 0.0888 (0.0005) \\
-121 & 0.167 & PanIC-CF-original & 6.34 (0.09) & 0.004 (0.003) & 1.019 (0.002) & 3.145 (0.007) & 0.0888 (0.0005) \\
-121 & 0.167 & BIC-like & 2.41 (0.08) & 0.126 (0.015) & 1.027 (0.002) & 2.871 (0.008) & 0.0888 (0.0005) \\
-121 & 0.167 & CV-min & 6.74 (0.09) & 0.002 (0.002) & 1.019 (0.001) & 3.179 (0.007) & 0.0888 (0.0005) \\
-121 & 0.167 & CV-1SE & 0.87 (0.05) & 0.502 (0.022) & 1.052 (0.002) & 2.559 (0.008) & 0.0888 (0.0005) \\
-241 & 0.083 & PanIC-CF & 5.88 (0.09) & 0.006 (0.003) & 1.019 (0.002) & 3.110 (0.007) & 0.1310 (0.0007) \\
-241 & 0.083 & PanIC-CF-original & 6.17 (0.09) & 0.006 (0.003) & 1.019 (0.002) & 3.133 (0.007) & 0.1310 (0.0007) \\
-241 & 0.083 & BIC-like & 2.19 (0.07) & 0.144 (0.016) & 1.026 (0.002) & 2.874 (0.008) & 0.1310 (0.0007) \\
-241 & 0.083 & CV-min & 6.70 (0.09) & 0.002 (0.002) & 1.019 (0.001) & 3.180 (0.007) & 0.1310 (0.0007) \\
-241 & 0.083 & CV-1SE & 0.68 (0.04) & 0.574 (0.022) & 1.057 (0.002) & 2.518 (0.007) & 0.1310 (0.0007) \\
+61 & 0.333 & PanIC-CF & 6.47 (0.10) & 0.000 (0.000) & 1.019 (0.001) & 3.149 (0.008) \\
+61 & 0.333 & BIC-like & 2.71 (0.08) & 0.124 (0.015) & 1.027 (0.001) & 2.867 (0.009) \\
+61 & 0.333 & CV & 6.80 (0.10) & 0.000 (0.000) & 1.019 (0.001) & 3.183 (0.008) \\
+121 & 0.167 & PanIC-CF & 6.24 (0.09) & 0.002 (0.002) & 1.019 (0.001) & 3.137 (0.007) \\
+121 & 0.167 & BIC-like & 2.44 (0.07) & 0.094 (0.013) & 1.026 (0.001) & 2.875 (0.008) \\
+121 & 0.167 & CV & 6.77 (0.09) & 0.000 (0.000) & 1.019 (0.001) & 3.183 (0.008) \\
+241 & 0.083 & PanIC-CF & 6.10 (0.09) & 0.000 (0.000) & 1.019 (0.001) & 3.126 (0.007) \\
+241 & 0.083 & BIC-like & 2.23 (0.07) & 0.124 (0.015) & 1.025 (0.001) & 2.881 (0.008) \\
+241 & 0.083 & CV & 6.67 (0.09) & 0.000 (0.000) & 1.019 (0.001) & 3.182 (0.007) \\
 \hline
 \end{tabular}
 \end{adjustbox}
@@ -1081,7 +1037,7 @@ $m$ & Spacing & Method & Total support error & Exact & Test deviance & Selected 
 % END PANIC INLINE TABLE: table_grid_sensitivity.tex
 
 
-The grid-sensitivity study uses 500 replications of the Gaussian independent setting at $n=1000$, with common random numbers and 61, 121, and 241 equally spaced radii on $[0,20]$ (Table \ref{Table: grid sensitivity}). PanIC-CF's mean total support error decreased from $6.204$ to $6.058$ to $5.878$, and its mean selected radius changed from $3.132$ to $3.122$ to $3.110$. The paired support-error changes were $-0.146$ (MCSE $0.079$) from 61 to 121 points and $-0.180$ ($0.056$) from 121 to 241 points. Mean test deviance was $1.020$, $1.019$, and $1.019$; the corresponding CV-min values were $1.019$ at the displayed precision. PanIC-CF-original had mean total support errors $6.454$, $6.338$, and $6.172$, while the BIC-like values were $2.678$, $2.410$, and $2.192$. Mean shared fitting time increased from $0.0674$ to $0.0888$ to $0.1310$ seconds. Thus the predictive comparison is stable over these three grids, whereas support error, selected radius, and computation retain some grid-resolution dependence; this finite comparison is not extrapolated to an asymptotic refining-grid claim.
+The grid-sensitivity study uses 500 replications of the Gaussian independent setting at $n=1000$, with common random numbers and 61, 121, and 241 equally spaced radii on $[0,20]$ (Table \ref{Table: grid sensitivity}). Across these grids, mean PanIC-CF test deviance remained between $1.0186$ and $1.0192$, while mean support error decreased from $6.468$ to $6.100$ and mean end-to-end per-replication runtime increased from $0.0650$ to $0.1316$ seconds. The paired support-error changes were $-0.226$ (MCSE $0.086$) from 61 to 121 points and $-0.142$ ($0.061$) from 121 to 241 points. Thus prediction was stable over these three grids, while support error, selected radius, and computation retained some grid-resolution dependence. This finite comparison is not an asymptotic refining-grid claim.
 
 \subsection{Boundary-law and subsampling illustration}
 We illustrate Proposition \ref{Prop: scalar boundary} and the scalar subsampling construction following Proposition \ref{Prop: subsampling fixed k} with $\beta^\circ=C=1$ and independent $X,\epsilon\sim N(0,1)$. Thus $q=\tau^2=1$ and the limiting continuous component is standard Gaussian on the negative half-line. For each of $n=100$ and $n=500$, 40,000 independent samples were generated. Table \ref{Table: boundary illustration} and the first two panels of Figure \ref{fig:boundary subsampling} show that the empirical boundary mass and lower quantiles are close to their analytic values. These calculations are descriptive checks of the fixed-threshold limit, not a claim of uniform finite-sample approximation.
@@ -1105,7 +1061,7 @@ Limit & 0.5 & -- & -1.282 & -0.674 & 0.5 \\
 % END PANIC INLINE TABLE: table_boundary.tex
 
 
-For the subsampling illustration, a single full sample of size $n=2000$ was generated once from the prespecified seed and used without selection or regeneration. Its unconstrained least-squares estimate was $1.0060$, so the constrained full-sample estimate under $|\beta|\le1$ was the binding value $\widehat\beta_n=1$. For each $b\in\{100,200,400\}$, each of $B_n=10{,}000$ independent repeated draws sampled $b$ distinct observation indices uniformly without replacement; the same subset could in principle recur across draws. Table \ref{Table: subsampling sensitivity} reports lower quantiles and CDF values at three negative continuity points. In this realised sample, $b/n=0.05$ was closest to the limiting CDF among the three choices. This finite comparison is consistent with, but is not implied monotonically by, the asymptotic condition $b/n\to0$. The reported atom at zero is descriptive only: Proposition \ref{Prop: subsampling fixed k} makes no pointwise approximation claim at that discontinuity.
+For the subsampling illustration, a single full sample of size $n=2000$ was generated once from the prespecified seed and used without selection or regeneration. Its unconstrained least-squares estimate was $1.0060$, so the constrained full-sample estimate under $|\beta|\le1$ was the binding value $\widehat\beta_n=1$. For each $b\in\{100,200,400\}$, each of $B_n=10{,}000$ independent repeated draws sampled $b$ distinct observation indices uniformly without replacement; the same subset could in principle recur across draws. Table \ref{Table: subsampling sensitivity} reports lower quantiles and CDF values at three negative continuity points. In this realised sample, $b/n=0.05$ gave the closest empirical CDF value at each of the three displayed continuity points. This finite comparison is consistent with, but is not implied monotonically by, the asymptotic condition $b/n\to0$. The reported atom at zero is descriptive only: Proposition \ref{Prop: subsampling fixed k} makes no pointwise approximation claim at that discontinuity.
 
 % BEGIN PANIC INLINE TABLE: table_subsampling.tex
 \begin{table}[H]
@@ -1140,22 +1096,22 @@ Limit & 0 & 0.500 & -1.282 & -0.674 & 0.159 & 0.309 & 0.460 \\
 \begin{figure}[H]
     \centering
     \safeincludegraphics[width=\textwidth]{figure_runtime.pdf}
-    \caption{Elapsed fitting time at $n=1000$ on the 121-point radius grid. Each boxplot contains 20 one-worker timed runs after two untimed warm-up runs. Data generation and independent-test evaluation are excluded. PanIC-CF includes ten half-sample paths and one full-sample path; PanIC-CF-original reuses those fits. The displayed five-fold-CV time is the shared computation for CV-min and CV-1SE: five fold-specific paths and one full-sample path. The Gaussian BIC-like criterion and the non-Gaussian analogues based on non-zero parameter counts each include one full-sample path and criterion evaluation. The computing environment is recorded with the code referenced in Appendix \ref{App: reproducibility}.}
+    \caption{Elapsed fitting time for the assessed methods at $n=1000$ on the 121-point radius grid. Each boxplot contains 20 one-worker timed runs.}
     \label{fig:runtime}
 \end{figure}
 
-In this implementation, PanIC-CF had higher mean elapsed time than the shared five-fold-CV computation because it fits ten half-sample paths, ten training-sign GLMs, ten independent validation GLMs, and a full-sample path. The PanIC-CF and shared CV means (MCSEs), respectively, were $0.0542$ ($0.0008$) and $0.0299$ ($0.0006$) seconds for Gaussian regression, $0.1864$ ($0.0029$) and $0.1148$ ($0.0020$) seconds for logistic regression, and $0.1684$ ($0.0021$) and $0.0951$ ($0.0009$) seconds for Poisson regression. Selecting both CV-min and CV-1SE from the same fold-loss matrix requires no additional fit; likewise, PanIC-CF-original differs from PanIC-CF only in deterministic scoring of the same paths. The corresponding one-path means were $0.0052$ ($0.0002$) seconds for the Gaussian BIC-like criterion and $0.0209$ ($0.0002$) and $0.0172$ ($0.0002$) seconds for the logistic and Poisson analogues based on non-zero parameter counts. These timings compare the stated implementations on one machine, not general computational complexity.
+Each timed run used one worker after two untimed warm-up runs; data generation and independent-test evaluation were excluded. PanIC-CF had higher mean elapsed time than CV because it fits ten half-sample paths, the associated ordinary training and validation GLMs, and one full-sample path, whereas CV fits five fold-specific paths and one full-sample path. The PanIC-CF and CV means (MCSEs), respectively, were $0.0498$ ($0.0005$) and $0.0277$ ($0.0003$) seconds for Gaussian regression, $0.1715$ ($0.0036$) and $0.1030$ ($0.0010$) seconds for logistic regression, and $0.1590$ ($0.0013$) and $0.0905$ ($0.0019$) seconds for Poisson regression. The corresponding one-path means were $0.0049$ ($0.0001$) seconds for the Gaussian BIC-like criterion and $0.0189$ ($0.0002$) and $0.0164$ ($0.0001$) seconds for the logistic and Poisson analogues. These timings compare the stated implementations on one machine, not general computational complexity; the computing environment is recorded with the code referenced in Appendix \ref{App: reproducibility}.
 
-The verified replication materials regenerate the seven manuscript-table mirrors and both figures. The manuscript embeds exact copies of the seven table mirrors, and the repository checks every marked block byte-for-byte against its generated counterpart; the separate \texttt{results/table\_*.tex} files are reproducibility outputs rather than compilation dependencies. Support-informed multiplier choices are retained only as labelled supplementary oracle outputs; because they use the true support, they are excluded from the primary comparisons and from the substantive conclusions.
+Support-informed multiplier choices are reported only as supplementary oracle diagnostics and do not enter the primary comparisons or conclusions.
 \end{bluechange}
 
 \section{Conclusion}\label{Sect: Conclusion}
 \begin{bluechange}
 This paper develops information-criterion methods for selecting the constraint level in regularised generalised linear models. The PanIC regularity conditions are verified for linear, logistic, Poisson, and Gamma regression with an intercept constrained to a common compact interval, and the Gamma result permits joint estimation of a shape parameter on a fixed compact interval bounded away from zero. For regularised linear least squares, the paper also gives a monotone MSE-scale BIC-like construction whose consistency argument separates the generic complexity ordering from model-specific degrees-of-freedom interpretations.
 
-The first-order theory covers deterministic continuum-indexed nested families and finite random candidate sets satisfying explicit one-sided coverage, empirical-risk, and penalty-separation conditions. At the second order, the constrained least-squares estimator is described by a random quadratic programme over a critical cone; the scalar binding-boundary case has a closed form, and subsampling consistently approximates nondegenerate scalar projections for a fixed candidate. Exact finite-grid selection transfers the fixed-candidate law, whereas a continuum-selected second-order limit would require a separate localisation and stochastic-equicontinuity analysis.
+The first-order theory covers deterministic continuum-indexed nested families and finite random candidate sets satisfying explicit one-sided coverage, empirical-risk, and penalty-separation conditions. At the second order, the constrained least-squares estimator is described by a random quadratic programme over a critical cone; the scalar binding-boundary case has a closed form, and subsampling consistently approximates nondegenerate scalar projections for a fixed candidate. Exact finite-grid selection transfers the fixed-candidate estimator law, whereas a continuum-selected second-order limit would require a separate localisation and stochastic-equicontinuity analysis.
 
-The compact-multiplier result permits finite-sample calibration without changing the first-order target, and Appendix \ref{App: kappa calibration} supplies a repeated two-way cross-signed rule based on ordinary unregularised half-sample fits. The numerical study evaluates that implementable rule in independent and correlated Gaussian and logistic designs and in an independent Poisson design, without using the true support. Against CV-min, the prespecified equal-weight seven-setting estimand gave a mean PanIC-CF support-error difference of $-0.43814$ with a one-sided $95\%$ upper Monte Carlo bound of $-0.40854$. Its mean relative test-deviance difference was $0.000160$, with upper bound $0.000214$ below the $0.001$ noninferiority margin. Thus the bounded joint support-superiority and prediction-noninferiority criterion passed for this simulation design under the complete-pairing and denominator-validity gate. CV-1SE produced a different trade-off, with substantially lower support error but higher test deviance, and the BIC-like rows were sparser but also had larger mean test deviance than CV-min. These comparisons do not imply a general dominance ordering because constraint-radius estimation, support recovery, and prediction remain different targets. The binding-boundary and subsampling experiments illustrate the non-Gaussian limit and its approximation at continuity points. Further work includes a joint second-order limit for a continuum-selected threshold and its estimator, and high-dimensional calibration when ordinary unregularised half-sample fits are unavailable.
+The compact-multiplier result supports the repeated two-way cross-signed rule in Appendix \ref{App: kappa calibration}. In the seven-setting comparison against CV, PanIC-CF met the joint criterion of lower mean support error and relative test-deviance noninferiority at the $0.1\%$ margin. The BIC-like comparators exhibited a different support--prediction trade-off. These simulations do not establish a general dominance ordering because constraint-radius estimation, support recovery, and prediction are distinct targets. The binding-boundary and subsampling experiments illustrate the non-Gaussian limit and its approximation at continuity points. Further work includes a joint second-order limit for a continuum-selected threshold and its estimator, and high-dimensional calibration when ordinary unregularised half-sample fits are unavailable.
 \end{bluechange}
 
 \section*{Acknowledgements}
@@ -1163,7 +1119,7 @@ Funding was provided by Australian Research Council grants DP230100905 and DP250
 
 \appendix
 
-\section{Repeated cross-signed calibration of the PanIC multiplier}\label{App: kappa calibration}
+\section[Repeated cross-signed calibration of the PanIC multiplier]{Repeated cross-signed calibration of the PanIC \mbox{multiplier}}\label{App: kappa calibration}
 \begin{bluechange}
 This appendix specifies the data-dependent multiplier rule used in Section \ref{Sect: calibration}. Each calibration row combines two ordinary unregularised estimators fitted on disjoint halves: the training-half estimator supplies coefficient signs and the validation-half estimator supplies signed coefficient magnitudes. The calibration discrepancy is centred on the smallest risk-optimal constraint radius; the finite multiplier search is a calibration device rather than a separate consistency theorem. The displays below use the compact theoretical parameter domains. Section \ref{Sect: Computations} describes the unconstrained numerical intercept and the localisation condition under which the theoretical and numerical intercept treatments agree asymptotically.
 
@@ -1198,7 +1154,7 @@ v(C)=r(\vartheta^\circ)\quad\text{if and only if}\quad C\ge C^\circ.
 \]
 Consequently, for a fixed grid $0\le C_1<\cdots<C_m$ with $m\ge2$ and $C_1\le C^\circ\le C_m$, the smallest risk-optimal candidate index is
 \[
-k^*=\min\{k\in[m]:C_k\ge C^\circ\}.
+k_C^*=\min\{k\in[m]:C_k\ge C^\circ\}.
 \]
 \end{proposition}
 
@@ -1243,7 +1199,7 @@ For Ridge,
 and $\|\widetilde\beta_S\|_2=O_{\mathbb P}(1)$ follows from (\ref{Eqs: unregularised pilot rate}). The Elastic-net bound is the corresponding convex combination of these two bounds. Multiplication by $\sqrt{|S|}$ proves the claim.
 \end{proof}
 
-For the Lasso functional, the plug-in radius $\|\widetilde\beta_S\|_1$ has a folded contribution $|\widetilde\beta_{S,j}|$ from every null coordinate. The implemented calibration instead separates sign estimation from coefficient estimation. For disjoint nonempty samples $S$ and $T$, define $\operatorname{sign}(0)=0$ and
+For the Lasso functional, the plug-in radius $\|\widetilde\beta_S\|_1$ contains the absolute-value contribution $|\widetilde\beta_{S,j}|$ from every null coordinate. The implemented calibration instead separates sign estimation from coefficient estimation. For disjoint nonempty samples $S$ and $T$, define $\operatorname{sign}(0)=0$ and
 \begin{equation}\label{Eqs: cross signed radius}
 \widetilde C_{S,T}^{\times}
 =\sum_{j=1}^d
@@ -1297,7 +1253,7 @@ $O_{\mathbb P}(N^{-1/2})$. The complement of the sign-consistency event has prob
 and the second claim follows.
 \end{proof}
 
-The two-way use of each split follows the general cross-fitting device of exchanging training and evaluation roles \citep{ChernozhukovEtAl2018DML}. Repeating the split reduces dependence on an arbitrary partition, as in multi-split procedures \citep{MeinshausenEtAl2009}. Related estimation theory for nonsmooth $L_1$ functionals appears in \citet{CaiLow2011}. These references motivate aspects of the construction only: they do not establish (\ref{Eqs: cross signed radius}) or import double-machine-learning orthogonality or multi-split $p$-value theory. Proposition \ref{Prop: cross signed pilot radius} proves the rate needed here. Because the $L_1$ functional is nondifferentiable at zero, no uniform local-to-zero claim is made \citep{HiranoPorter2012}.
+Using both directions of each split follows the general cross-fitting device of exchanging training and evaluation roles \citep{ChernozhukovEtAl2018DML}, while repeated splits reduce dependence on a single partition \citep{MeinshausenEtAl2009}. These references motivate the design but do not establish the cross-signed estimator in (\ref{Eqs: cross signed radius}); Proposition \ref{Prop: cross signed pilot radius} proves its rate. Because the $L_1$ functional is nondifferentiable at zero, the proposition makes no uniform local-to-zero claim \citep{HiranoPorter2012}.
 
 Let
 \[
@@ -1315,29 +1271,29 @@ D_N(k)
 Suppose $t_N-t^\circ=O_{\mathbb P}(N^{-1/2})$, $\omega_N\to\infty$, and $\omega_N/N\to0$. Then
 \[
 \mathbb P\left[
-\min\left\{\argmin_{k\in[m]}D_N(k)\right\}=k^*
+\min\left\{\argmin_{k\in[m]}D_N(k)\right\}=k_C^*
 \right]\longrightarrow1,
 \]
-where $k^*$ is defined in Proposition \ref{Prop: population pilot radius}.
+where $k_C^*$ is defined in Proposition \ref{Prop: population pilot radius}.
 \end{proposition}
 
 
 \begin{proof}
-Fix $k<k^*$. Strict increase of $\psi$ and the definition of $k^*$ give $\delta_k=t^\circ-\psi(C_k)>0$. Since $t_N\to_{\mathbb P}t^\circ$, with probability tending to one, $t_N-\psi(C_k)\ge\delta_k/2$. Hence $D_N(k)\ge\omega_N\delta_k^2/4\to\infty$ in probability.
+Fix $k<k_C^*$. Strict increase of $\psi$ and the definition of $k_C^*$ give $\delta_k=t^\circ-\psi(C_k)>0$. Since $t_N\to_{\mathbb P}t^\circ$, with probability tending to one, $t_N-\psi(C_k)\ge\delta_k/2$. Hence $D_N(k)\ge\omega_N\delta_k^2/4\to\infty$ in probability.
 
-For $k\ge k^*$, first suppose $C_{k^*}>C^\circ$. With probability tending to one, $t_N<\psi(C_{k^*})$, and therefore
+For $k\ge k_C^*$, first suppose $C_{k_C^*}>C^\circ$. With probability tending to one, $t_N<\psi(C_{k_C^*})$, and therefore
 \[
 D_N(k)=\{\psi(C_k)-t_N\}^2
 \xlongrightarrow{\mathbb P}
 \{\psi(C_k)-t^\circ\}^2.
 \]
-The limiting value is uniquely minimised over $k\ge k^*$ at $k=k^*$ because $\psi$ is strictly increasing. If instead $C_{k^*}=C^\circ$, then
+The limiting value is uniquely minimised over $k\ge k_C^*$ at $k=k_C^*$ because $\psi$ is strictly increasing. If instead $C_{k_C^*}=C^\circ$, then
 \[
-D_N(k^*)
+D_N(k_C^*)
 \le \max(1,\omega_N)(t_N-t^\circ)^2
 =O_{\mathbb P}(\omega_N/N)=o_{\mathbb P}(1),
 \]
-whereas for every $k>k^*$,
+whereas for every $k>k_C^*$,
 \[
 D_N(k)\xlongrightarrow{\mathbb P}
 \{\psi(C_k)-t^\circ\}^2>0.
@@ -1352,14 +1308,14 @@ The implementation uses
 \]
 which is well defined and positive for every positive integer $N$, diverges as $N\to\infty$, and satisfies $\omega_N/N\to0$.
 
-Proposition \ref{Prop: asymmetric pilot target} concerns direct minimisation of the discrepancy over the candidate radii. In the multiplier rule below, a radius is reachable only if it is selected by PanIC for at least one $\kappa\in\mathcal K$; no assumption is made that every grid index is reachable. Accordingly, the proposition supplies the target-alignment rationale for the discrepancy, not a separate consistency theorem for the finite multiplier search. The first-order validity of the final full-sample selector follows instead from Proposition \ref{Prop: uniform kappa}.
+Proposition \ref{Prop: asymmetric pilot target} concerns direct minimisation of the discrepancy over the candidate radii. In the multiplier rule below, a radius is reachable only if it is selected by PanIC for at least one $\kappa\in\mathcal K_\kappa$; no assumption is made that every grid index is reachable. Accordingly, the proposition supplies the target-alignment rationale for the discrepancy, not a separate consistency theorem for the finite multiplier search. The first-order validity of the final full-sample selector follows instead from Proposition \ref{Prop: uniform kappa}.
 
 \subsection{Repeated two-way cross-fitted multiplier rule}
 Generate $R$ random balanced partitions $(\mathcal H_{r,1},\mathcal H_{r,2})$ of $[n]$, independently across $r=1,\ldots,R$, and use both directions of every partition. The split randomisation is independent of the observations, and $R$ remains fixed as $n\to\infty$. Index the resulting $B=2R$ calibration rows by $b$, with disjoint training and validation halves $(\mathcal T_b,\mathcal V_b)$ and sizes $n_{b,\mathrm{tr}}$ and $n_{b,\mathrm{val}}$. The implementation fixes $R=5$, giving ten rows, and both half sizes are asymptotic to $n/2$. If preprocessing is needed, its centring and scaling constants are estimated from $\mathcal T_b$ and applied to both halves. The rate statement then additionally requires the transformed ordinary estimators on both halves to satisfy the root-half-sample conditions in Proposition \ref{Prop: cross signed pilot radius} for the same fixed-coordinate $\beta^\circ$.
 
-Let $\mathcal A_n$ be the measurable event that every ordinary half-sample fit and every constrained row fit needed to compute the scores below returns finite values and passes the prespecified diagnostics; all ties and diagnostic decisions use fixed deterministic rules.
+Let $\mathcal A_n$ be the measurable event that every ordinary half-sample empirical-risk minimiser used below exists uniquely and is finite, and that every constrained row fit returns finite coefficients and a finite empirical-risk value. The numerical implementation also treats a nonconverged or nonfinite solver result as $\mathcal A_n^c$. All ties and failure decisions use fixed deterministic rules.
 
-Let $\mathcal K=\{\kappa_1<\cdots<\kappa_L\}\subset[\underline\kappa,\overline\kappa]$ be fixed before inspecting the simulation outcomes, where $0<\underline\kappa\le\overline\kappa<\infty$. On $\mathcal A_n$, for each row compute ordinary unregularised fits on both halves,
+Let $\mathcal K_\kappa=\{\kappa_1<\cdots<\kappa_L\}\subset[\underline\kappa,\overline\kappa]$ be fixed before inspecting the simulation outcomes, where $0<\underline\kappa\le\overline\kappa<\infty$. On $\mathcal A_n$, for each row compute ordinary unregularised fits on both halves,
 \[
 \widetilde\vartheta_b^{\mathrm{tr}}
 =\argmin_{\vartheta\in\Theta_{\mathrm u}}R_{\mathcal T_b}(\vartheta),
@@ -1383,7 +1339,7 @@ The raw $\widetilde C_b^{\times}$ is retained for below-grid and above-grid diag
 \widehat v_{b,k}=\min_{\vartheta\in\mathbb T_k}R_{\mathcal T_b}(\vartheta),
 \qquad k\in[m].
 \]
-For each $\kappa\in\mathcal K$, define
+For each $\kappa\in\mathcal K_\kappa$, define
 \[
 \widehat k_b(\kappa)
 =\min\left\{\argmin_{k\in[m]}
@@ -1438,18 +1394,18 @@ Because rows from repeated partitions overlap and the two directions of a partit
 Let
 \[
 \kappa_{\min}
-=\min\left\{\argmin_{\kappa\in\mathcal K}\overline D(\kappa)\right\},
+=\min\left\{\argmin_{\kappa\in\mathcal K_\kappa}\overline D(\kappa)\right\},
 \]
 and, on $\mathcal A_n$, select
 \begin{equation}\label{Eqs: kappa one standard error}
 \widehat\kappa_n^{\mathrm{cal}}
-=\max\left\{\kappa\in\mathcal K:
+=\max\left\{\kappa\in\mathcal K_\kappa:
 \overline D(\kappa)
 \le \overline D(\kappa_{\min})
 +\widehat{\operatorname{se}}\{\overline D(\kappa_{\min})\}
 \right\}.
 \end{equation}
-Equation (\ref{Eqs: kappa one standard error}) defines $\widehat\kappa_n^{\mathrm{cal}}$ on $\mathcal A_n$. Fix $\kappa^\dagger\in\mathcal K$ before observing the data (the implementation uses $\kappa^\dagger=1$) and define the total multiplier
+Equation (\ref{Eqs: kappa one standard error}) defines $\widehat\kappa_n^{\mathrm{cal}}$ on $\mathcal A_n$. Fix $\kappa^\dagger\in\mathcal K_\kappa$ before observing the data (the implementation uses $\kappa^\dagger=1$) and define the total multiplier
 \[
 \widehat\kappa_n=
 \begin{cases}
@@ -1457,8 +1413,8 @@ Equation (\ref{Eqs: kappa one standard error}) defines $\widehat\kappa_n^{\mathr
 \kappa^\dagger,&\mathcal A_n^c.
 \end{cases}
 \]
-On $\mathcal A_n^c$ the procedure retains a calibration-failure flag; $\kappa^\dagger$ is a multiplier fallback and no regularised pilot is substituted. Thus $\widehat\kappa_n\in\mathcal K\subset[\underline\kappa,\overline\kappa]$ on every outcome, so Proposition \ref{Prop: uniform kappa} applies directly. The cross-signed pilot-rate interpretation additionally requires $\mathbb P(\mathcal A_n)\to1$ and the half-sample rate conditions in Proposition \ref{Prop: cross signed pilot radius}; that success-probability condition is not needed for the uniform-multiplier conclusion once the rule is totalised.
-The particular admissible sequence used for $\omega_b$ can change which element of $\mathcal K$ is selected, but it cannot affect this compact-range argument.
+On $\mathcal A_n^c$ the procedure retains a calibration-failure flag; $\kappa^\dagger$ is a multiplier fallback and no regularised pilot is substituted. Thus $\widehat\kappa_n\in\mathcal K_\kappa\subset[\underline\kappa,\overline\kappa]$ on every outcome, so Proposition \ref{Prop: uniform kappa} applies directly. The cross-signed pilot-rate interpretation additionally requires $\mathbb P(\mathcal A_n)\to1$ and the half-sample rate conditions in Proposition \ref{Prop: cross signed pilot radius}; that success-probability condition is not needed for the uniform-multiplier conclusion because the fallback defines $\widehat\kappa_n$ on every outcome.
+The particular admissible sequence used for $\omega_b$ can change which element of $\mathcal K_\kappa$ is selected, but it cannot affect this compact-range argument.
 Finally, refit the constrained candidates on the full sample and select the smallest minimiser of their PanIC criteria with multiplier $\widehat\kappa_n$.
 
 \begin{lemma}\label{Lemma: multiplier monotonicity}
@@ -1481,7 +1437,7 @@ Adding yields $(\kappa_2-\kappa_1)(Q_{k_2}-Q_{k_1})\le0$, contradicting strict i
 
 Lemma \ref{Lemma: multiplier monotonicity} gives the parsimony interpretation of the largest-multiplier rule in (\ref{Eqs: kappa one standard error}). A suggested multiplier grid is
 \[
-\mathcal K_0
+\mathcal K_{\kappa,0}
 =\left\{10^{-2+4j/30}:j=0,\ldots,30\right\},
 \]
 although any alternative finite grid can also be used as long as it is fixed in advance, lies in a positive compact interval, and contains the prespecified default $\kappa^\dagger$. Frequent selection of either multiplier endpoint, raw cross-signed targets below $C_1$ or above $C_m$, or selected radii at either radius endpoint is an explicit diagnostic that the corresponding grid should be reconsidered.
@@ -1497,9 +1453,7 @@ Calibration from the pilot scores requires a unique finite ordinary unregularise
 
 \begin{bluechange}
 \section{Reproducibility details}\label{App: reproducibility}
-The accompanying replication archive is \texttt{PanIC\_R1\_replication\_archive.zip}; its SHA-256 digest is \texttt{eadd77bb5eda57798784207207b75ef493c5f23d35de1f3c96a4f7e00440766f}. It contains the locked configuration and checksums, deterministic seed ledgers, source scripts, raw scenario files, paired contrasts, the relative-deviance denominator audit, calibration and failure diagnostics, solver checks, environment and session records, and the generated table mirrors and figures. The seven table bodies are embedded directly in \texttt{main.tex}; their separate repository copies are checksum-controlled reproducibility mirrors, not compilation dependencies.
-
-A compact public repository containing the numerical implementation, manuscript source, retained outputs, deterministic table renderer, and verification checks is available at \url{https://github.com/hiendn/PanIC_for_Regularised_GLMs}; commit \texttt{cab64126958b8630d8ded0bf1f8ba7c2d66972a7} identifies the implementation corresponding to the reported outputs.
+The simulations were implemented in R 4.4.0 using \texttt{glmnet} 4.1-10 and \texttt{Matrix} 1.7-0. The code, numerical settings, and retained outputs used for the tables and figures are available at \url{https://github.com/hiendn/PanIC_for_Regularised_GLMs}.
 \end{bluechange}
 
 \section{Proofs}
@@ -1539,7 +1493,7 @@ The mean-value theorem, $|h(\eta)-y|\le1$ for $y\in\{0,1\}$, and $e^{\pm\eta}\le
 
 \subsection{Proof of Proposition \ref{Prop: estimated Gamma shape}}
 \begin{proof}
-Continuity and measurability are immediate on the fixed compact interval $\mathbb V=[\nu_-,\nu_+]$ with $0<\nu_-<\nu_+<\infty$. At a fixed baseline $(u_0,0,\nu_0)$, the loss in (\ref{Eqs: Gamma estimated loss}) is bounded by a constant multiple of $1+Y+|\log Y|$, so A2 holds. In addition to the $(\beta_0,\beta)$ gradient controlled in Proposition \ref{Prop: intercept envelopes},
+Continuity and measurability follow on the fixed compact interval $\mathbb V=[\nu_-,\nu_+]$ with $0<\nu_-<\nu_+<\infty$. At a fixed baseline $(u_0,0,\nu_0)$, the loss in (\ref{Eqs: Gamma estimated loss}) is bounded by a constant multiple of $1+Y+|\log Y|$, so A2 holds. In addition to the $(\beta_0,\beta)$ gradient controlled in Proposition \ref{Prop: intercept envelopes},
 \[
 \frac{\partial\ell}{\partial\nu}
 =\psi_0(\nu)-\log\nu-1+\eta-\log y+ye^{-\eta},
@@ -1553,7 +1507,7 @@ Its square is integrable by the sub-Gaussian exponential-moment bound, the Cauch
 
 \subsection{Proof of Proposition \ref{Prop: generic BIC penalty}}
 \begin{proof}
-For $n\ge2$, positivity is immediate; at $n=1$ it follows from the positive convention in the proposition. Since $m$ is fixed and $\psi(C_m)<\infty$,
+For $n\ge2$, positivity follows from the definition; at $n=1$ it follows from the positive convention in the proposition. Since $m$ is fixed and $\psi(C_m)<\infty$,
 \[
 \max_kP_{k,n}\le\frac{\log n}{n}
 \{c_0+\kappa_DO_{\mathbb P}(r_n)+\varepsilon\psi(C_m)\}
@@ -1604,7 +1558,7 @@ Fix $a$ and define the scalar estimator $T_n=a^\top\widehat\theta_{k,n}$ of $T=a
 \[
 \sqrt n(T_n-T)\rightsquigarrow a^\top\bar d_k(Z_k),
 \]
-whose distribution function is $F_{k,a}$. Apply \citet[Theorem 2.2.1]{politis1999subsampling} with normalising constants $\tau_n=\sqrt n$. The conditions $b\to\infty$ and $b/n\to0$ imply $\tau_b/\tau_n=\sqrt{b/n}\to0$, and the subsample statistic in that theorem is exactly $\sqrt b\,a^\top(\widehat\theta_{k,b,J}-\widehat\theta_{k,n})$. The theorem therefore yields $\widehat L_{n,b,a}(x)\to_{\mathbb P}F_{k,a}(x)$ at every continuity point of $F_{k,a}$. If only $B_n$ subsets are sampled, the stochastic-approximation result of \citet[Corollary 2.4.1]{politis1999subsampling} applies when $B_n\to\infty$ and gives the same limit.
+whose distribution function is $F_{k,a}$. Apply \citet[Theorem 2.2.1]{politis1999subsampling} with normalising constants $\tau_n=\sqrt n$. The conditions $b\to\infty$ and $b/n\to0$ imply $\tau_b/\tau_n=\sqrt{b/n}\to0$, and the subsample statistic in that theorem is exactly $\sqrt{b_n}\,a^\top(\widehat\theta_{k,b_n,J}-\widehat\theta_{k,n})$. The theorem therefore yields $\widehat L_{n,b_n,a}(x)\to_{\mathbb P}F_{k,a}(x)$ at every continuity point of $F_{k,a}$. If only $B_n$ subsets are sampled, the stochastic-approximation result of \citet[Corollary 2.4.1]{politis1999subsampling} applies when $B_n\to\infty$ and gives the same limit.
 \end{proof}
 \end{bluechange}
 
@@ -1654,7 +1608,11 @@ the penalised objective
 F_{n}(k)=m_{n}(k)+P_{k,n}.
 \]
 Since both $m_n$ and $k\mapsto P_{k,n}(\omega)$ are continuous on $\left[a,b\right]$ for almost every realisation, the penalised objective $F_n$ is continuous and therefore attains its minimum on $\left[a,b\right]$. Hence, for each $n\in\mathbb{N}$, the argmin set in the definition
-of $\hat{K}_{n}$ is non-empty and $\hat{K}_{n}$ is well-defined. For each fixed $k$, the measurable maximum theorem gives measurability of the criterion in the sample, while its sample paths are continuous in $k$; hence the criterion is jointly measurable by the Carath\'eodory measurability theorem. The argmin correspondence on the compact interval therefore admits a measurable selector, and the minimum tie-breaking selector $\hat K_n$ is measurable; see \citet[Theorem 18.19]{aliprantis_infinite_2006}.
+of $\hat{K}_{n}$ is non-empty and $\hat{K}_{n}$ is well-defined. For each fixed $k$, the measurable maximum theorem gives measurability of the criterion in the sample, while its sample paths are continuous in $k$; hence the criterion is jointly measurable by the Carath\'eodory measurability theorem. The argmin correspondence $\Gamma_n(\omega)=\argmin_{k\in[a,b]}F_n(k,\omega)$ is therefore nonempty, compact-valued, and measurable; see \citet[Theorem 18.19]{aliprantis_infinite_2006}. For every $t\in\mathbb R$,
+\[
+\{\min\Gamma_n<t\}=\{\Gamma_n\cap([a,b]\cap(-\infty,t))\ne\varnothing\},
+\]
+which is measurable by weak measurability of $\Gamma_n$. Hence the minimum tie-breaking selector $\widehat K_n=\min\Gamma_n$ is measurable.
 
 To show convergence in probability, we will show for all $\sigma>0$,
 \[
@@ -1788,12 +1746,8 @@ The componentwise calculations below are written in no-intercept Lasso notation 
 \begin{proof}
     It suffices to verify the PanIC conditions,
     \begin{enumerate}
-    \item[A1]: $\ell_k(x, y; \cdot): \mathbb{T}_k \to \mathbb{R}$ is continuous for each $(x, y) \in \mathbb{X}$ as it is differentiable with respect to $\beta$. Fix $\beta \in \mathbb{T}_k$, $\ell_k(\cdot; \beta): \mathbb{X} \to \mathbb{R}$ is given by
-    \begin{align*}
-        \ell_k(x, y; \beta) &= (\Tilde{f}(x, y; \beta)  - \Tilde{g}(x, y; \beta))^2\\
-        &= (f(y; \beta)  - g(x; \beta))^2,
-    \end{align*}
-    where $\Tilde{f}(x, y; \beta) = f(y; \beta) = y$ and $\Tilde{g}(x, y; \beta) = g(x; \beta) = \beta^\top x$. The functions $f$ and $g$ are measurable on their respective domain, so $\Tilde{f}$ and $\Tilde{g}$ are measurable on the product space $\mathbb{X}$. It follows that $\ell_k(\cdot; \beta)$ is measurable on $\mathbb{X}$.
+    \item[A1]: For each $(x,y)\in\mathbb R^d\times\mathbb R$, the map
+    $\beta\mapsto(y-\beta^\top x)^2$ is continuous. For each fixed $\beta$, the same expression is Borel measurable as a function of $(x,y)$.
     \item[A2]: $\mathbb{T}_k = \{\beta\in \mathbb{R}^d: \lVert\beta\rVert_1 \leq C_k\}$ is compact. Let $\tau_k = 0 \in \mathbb{R}^d$, as $\lVert 0 \rVert_1 \leq C_k$ for all $k \in \left[m\right]$, $\tau_k \in \mathbb{T}_k$. This condition is satisfied if $Y$ has a finite fourth moment:
     \[\mathbb{E}\left(\ell_k(X, Y; \tau_k)^2\right) = \mathbb{E}\left(Y^4\right) < \infty.\]
     \item[A3]: Fix $(x, y)\in \mathbb{X}$, $k \in \left[m\right]$ and $\beta, \beta' \in \mathbb{T}_k$. By the multivariate Mean Value Theorem \citep{davidson_stochastic_2021},
@@ -1822,17 +1776,11 @@ The componentwise calculations below are written in no-intercept Lasso notation 
 \subsubsection{Logistic Regression}
 \begin{proof}
     \begin{enumerate}
-    \item[A1]: $\ell_k(x, y; \cdot): \mathbb{T}_k \to \mathbb{R}$ is continuous for each $(x, y) \in \mathbb{X}$ as it is differentiable with respect to $\beta$. Fix $\beta \in \mathbb{T}_k$, $\ell_k(\cdot; \beta): \mathbb{X} \to \mathbb{R}$ is given by
-    \begin{align*}
-        \ell_k(x, y; \beta) &= \Tilde{f}(x, y; \beta)\Tilde{g}(x, y; \beta)  + \Tilde{h}(x, y; \beta)\\
-        &= f(y; \beta)g(x; \beta)  + h(x; \beta),
-    \end{align*}
-    where $\Tilde{f}(x, y; \beta) = f(y; \beta) = y$,
-    \begin{align*}
-        \Tilde{g}(x, y; \beta) = g(x; \beta) &= -\log\left(\frac{1}{1 + e^{-\beta^\top x}}\right) + \log\left(1 - \frac{1}{1 + e^{-\beta^\top x}}\right),\\
-        \Tilde{h}(x, y; \beta) = h(x; \beta) &= -\log\left(1 - \frac{1}{1 + e^{-\beta^\top x}}\right).
-    \end{align*}
-    Both $g$ and $h$ are continuous functions, so they are measurable with respect to the Borel $\sigma$-algebra on $\mathbb{R}^d$. The function $f$ is measurable with respect to the discrete $\sigma$-algebra on $\{0, 1\}$. So $\Tilde{f}$, $\Tilde{g}$ and $\Tilde{h}$ are measurable on the product space $\mathbb{X}$. It follows that $\ell_k(\cdot; \beta)$ is measurable on $\mathbb{X}$.
+    \item[A1]: For each $(x,y)\in\mathbb R^d\times\{0,1\}$, the map
+    \[
+    \beta\mapsto \log\{1+\exp(\beta^\top x)\}-y\beta^\top x
+    \]
+    is continuous. For each fixed $\beta$, it is measurable as a function of $(x,y)$ on $\mathbb R^d\times\{0,1\}$ equipped with the product $\sigma$-algebra.
     \item[A2]: $\mathbb{T}_k$ is compact. Let $\tau_k = 0 \in \mathbb{R}^d$, then $\tau_k \in \mathbb{T}_k$ for all $k \in \left[m\right]$. This condition is satisfied as
     \begin{align*}
         \mathbb{E}\left(\ell_k(X, Y; \tau_k)^2\right) &= \mathbb{E}\left(\left(-Y \log(1/2) - (1-Y)\log(1-1/2)\right)^2\right)\\
@@ -1862,18 +1810,11 @@ The componentwise calculations below are written in no-intercept Lasso notation 
 \subsubsection{Poisson Regression}
 \begin{proof}
     \begin{enumerate}
-    \item[A1]: $\ell_k(x, y; \cdot): \mathbb{T}_k \to \mathbb{R}$ is continuous for each $(x, y) \in \mathbb{X}$ as it is differentiable with respect to $\beta$. Fix $\beta \in \mathbb{T}_k$, $\ell_k(\cdot; \beta): \mathbb{X} \to \mathbb{R}$ is given by
-    \begin{align*}
-        \ell_k(x, y; \beta) &= \Tilde{f}(x, y; \beta)\Tilde{g}(x, y; \beta)  + \Tilde{h}_1(x, y; \beta) + \Tilde{h}_2(x, y; \beta)\\
-        &= f(y; \beta)g(x; \beta)  + h_1(x; \beta) + h_2(y; \beta),
-    \end{align*}
-    where $\Tilde{f}(x, y; \beta) = f(y; \beta) = y$,
-    \begin{align*}
-        \Tilde{g}(x, y; \beta) = g(x; \beta) &= -\beta^\top x,\\
-        \Tilde{h}_1(x, y; \beta) = h_1(x; \beta) &= \exp(\beta^\top x),\\
-        \Tilde{h}_2(x, y; \beta) = h_2(y; \beta) &= \log(y!).
-    \end{align*}
-    Both $g$ and $h_1$ are continuous functions, so they are measurable with respect to the Borel $\sigma$-algebra on $\mathbb{R}^d$. Both $f$ and $h_2$ are measurable with respect to the discrete $\sigma$-algebra on $\mathbb{Z}_{\geq 0}$. So $\Tilde{f}$, $\Tilde{g}$, $\Tilde{h}_1$ and $\Tilde{h}_2$ are measurable on the product space $\mathbb{X}$. It follows that $\ell_k(\cdot; \beta)$ is measurable on $\mathbb{X}$.
+    \item[A1]: For each $(x,y)\in\mathbb R^d\times\mathbb Z_{\ge0}$, the map
+    \[
+    \beta\mapsto \exp(\beta^\top x)-y\beta^\top x+\log(y!)
+    \]
+    is continuous. For each fixed $\beta$, it is measurable as a function of $(x,y)$ on $\mathbb R^d\times\mathbb Z_{\ge0}$ equipped with the product $\sigma$-algebra.
     \item[A2]: $\mathbb{T}_k$ is compact. Let $\tau_k = 0 \in \mathbb{R}^d$, then $\tau_k \in \mathbb{T}_k$ for all $k \in \left[m\right]$. This condition is satisfied if $Y$ has a finite fourth moment. For any integer $y\in\mathbb{Z}_{\geq 0}$,
     \[
         \log(y!) = \sum_{j=1}^y \log(j) \leq \sum_{j=1}^y j = y(y+1)/2 \leq y^2.
@@ -1919,18 +1860,12 @@ The componentwise calculations below are written in no-intercept Lasso notation 
 \subsubsection{Gamma Regression}
 \begin{proof}
     \begin{enumerate}
-    \item[A1]: $\ell_k(x, y; \cdot): \mathbb{T}_k \to \mathbb{R}$ is continuous for each $(x, y) \in \mathbb{X}$ as it is differentiable with respect to $\beta$. Fix $\beta \in \mathbb{T}_k$, $\ell_k(\cdot; \beta): \mathbb{X} \to \mathbb{R}$ is given by
-    \begin{align*}
-        \ell_k(x, y; \beta) &= \Tilde{f}(x, y; \beta)\Tilde{g}(x, y; \beta)  + \Tilde{h}_1(x, y; \beta) + \Tilde{h}_2(x, y; \beta)\\
-        &= f(y; \beta)g(x; \beta)  + h_1(x; \beta) + h_2(y; \beta),
-    \end{align*}
-    where $\Tilde{f}(x, y; \beta) = f(y; \beta) = y$,
-    \begin{align*}
-        \Tilde{g}(x, y; \beta) = g(x; \beta) &= \nu\exp(-\beta^\top x),\\
-        \Tilde{h}_1(x, y; \beta) = h_1(x; \beta) &= \nu\beta^\top x + \log(\Gamma(\nu)) - \nu\log(\nu),\\
-        \Tilde{h}_2(x, y; \beta) = h_2(y; \beta) &= - (\nu-1)\log(y).
-    \end{align*}
-    Both $g$ and $h_1$ are continuous functions, so they are measurable with respect to the Borel $\sigma$-algebra on $\mathbb{R}^d$. Both $f$ and $h_2$ are measurable with respect to the Borel $\sigma$-algebra on $\mathbb{R}_+$. So $\Tilde{f}$, $\Tilde{g}$, $\Tilde{h}_1$ and $\Tilde{h}_2$ are measurable on the product space $\mathbb{X}$. It follows that $\ell_k(\cdot; \beta)$ is measurable on $\mathbb{X}$.
+    \item[A1]: For fixed $\nu>0$ and each $(x,y)\in\mathbb R^d\times(0,\infty)$, the map
+    \[
+    \beta\mapsto \nu\beta^\top x+\nu y\exp(-\beta^\top x)
+    -(\nu-1)\log y+\log\Gamma(\nu)-\nu\log\nu
+    \]
+    is continuous. For each fixed $\beta$, it is Borel measurable as a function of $(x,y)$.
     \item[A2]: $\mathbb{T}_k$ is compact. Let $\tau_k = 0 \in \mathbb{R}^d$, then $\tau_k \in \mathbb{T}_k$ for all $k \in \left[m\right]$. This condition is satisfied if $Y$ has a finite fourth moment and $\mathbb{E}\left\{\left(\log Y\right)^2\right\} < \infty$. Let $c_\nu = \log(\Gamma(\nu)) - \nu\log(\nu)$. Then
     \begin{align*}
         \mathbb{E}\left(\ell_k(X, Y; \tau_k)^2\right) &= \mathbb{E}\left(\left(c_\nu + \nu Y - (\nu - 1)\log Y \right)^2\right)\\
@@ -1968,54 +1903,47 @@ The componentwise calculations below are written in no-intercept Lasso notation 
 
 \subsection{Proof of Proposition \ref{Prop: BIC-like consistency}}
 
+\begin{bluechange}
 \begin{proof}
-    By Theorem 2 of \cite{nguyen_panic:_2023}, it suffices to show conditions C1--C5. We write the verification in the no-intercept notation for simplicity. If an intercept is present, define the augmented covariate $\tilde{X}=(1,X^\top)^\top$ and parameter $\tilde{\beta}=(\beta_0,\beta^\top)^\top$. Then $r(\tilde{\beta})=\mathbb{E}\left(\left(Y-\tilde{\beta}^\top \tilde{X}\right)^2\right)$ has Hessian $2\tilde{\Sigma}$ with
-    \[
-    \tilde{\Sigma}=\mathbb{E}(\tilde{X}\tilde{X}^\top)=\begin{bmatrix}1 & \mu^\top\\ \mu & \Sigma+\mu\mu^\top\end{bmatrix}.
-    \]
-    and for any $(a,b)\neq 0$ we have
+By Theorem 2 of \citet{nguyen_panic:_2023}, it is enough to verify C1--C5. We include the intercept. Write
 \[
-\begin{bmatrix}a\\ b\end{bmatrix}^\top \tilde{\Sigma}\begin{bmatrix}a\\ b\end{bmatrix}=(a+b^\top \mu)^2+b^\top \Sigma b>0
+\widetilde X=(1,X^\top)^\top,
+\qquad
+\theta=(\beta_0,\beta^\top)^\top,
+\qquad
+\widetilde\Sigma=\mathbb E(\widetilde X\widetilde X^\top)
+=\begin{bmatrix}1&\mu^\top\\ \mu&\Sigma+\mu\mu^\top\end{bmatrix},
 \]
-whenever $\Sigma$ is positive definite. The compact interval constraining the intercept is polyhedral, and taking its Cartesian product with any of the slope constraint sets preserves the second-order regularity verified below by \citet[Proposition 3.89]{bonnans_perturbation_2000}. Hence the strict-convexity, regularity, and remaining arguments apply after this augmentation (the intercept coordinate is common to all candidate models and contributes the same amount to any absolute complexity score), so we drop tildes and omit the intercept for readability. We start with $\mathrm{C1}$. Using the functional form of $\ell_k$ from Table \ref{Table: Regression}, we have
-    \begin{align*}
-        r_k(\beta) &= \mathbb{E}\left(\ell_k(X, Y; \beta)\right)\\
-        &= \mathbb{E}\left(\left(Y - \beta^\top X\right)^2\right)\\
-        &= \mathbb{E}\left(Y^2\right) - 2\beta^\top \mathbb{E}\left(X Y\right) + \mathrm{tr}(\beta\beta^\top\Sigma) + \mu^\top \beta\beta^\top\mu,
-    \end{align*}
-    where $\mu$ and $\Sigma$ are the mean vector and the covariance matrix of $X$, respectively. Differentiating $r_k$ twice, we get
-    \begin{align*}
-        \frac{\partial^2 r_k}{\partial \beta\partial\beta^\top}(\beta) &= 2 \Sigma + 2\mu\mu^\top.
-    \end{align*}
-    By our assumption that $\Sigma$ is a positive definite matrix, we see that the Hessian of $r_k$ is also positive definite. Hence, $r_k$ is strictly convex. As $r_k$ is strictly convex, it has, on a convex set, at most one minimiser. Since $\mathbb{T}_k$ is compact and $r_k$ is continuous, such a minimiser exists. To show Lipschitz continuity, first, we note that our assumptions on $X$ and $Y$ satisfy the conditions in Proposition \ref{Prop: Sufficient conditions}. In particular, for $\beta, \beta' \in \mathbb{T}_k$, there exists a measurable function $\mathcal{G}_k$ with $\int \mathcal{G}_k(x,y)\,\Pi(dx,dy) < \infty$ such that for all $(x,y)\in\mathbb{R}^d\times\mathbb{R}$,
-    \[
-        \left| \ell_k(x, y; \beta) - \ell_k(x, y; \beta')\right| \leq \mathcal{G}_k(x, y) \lVert \beta - \beta'\rVert_1.
-    \]
-    Then, for $\beta, \beta' \in \mathbb{T}_k$,
-    \begin{align*}
-        \left|r_k(\beta) - r_k(\beta')\right| &\leq  \int_{\mathbb{R}^d \times \mathbb{R}} \left| \ell_k(x, y; \beta) - \ell_k(x, y; \beta')\right| \, \Pi(dx, dy)\\
-        &\leq \int_{\mathbb{R}^d \times \mathbb{R}} \mathcal{G}_k(x, y) \lVert \beta - \beta'\rVert_1 \, \Pi(dx, dy)\\
-        &= c\lVert \beta - \beta'\rVert_1,
-    \end{align*}
-    for some $c < \infty$. This shows $\mathrm{C1}$. Next, we note that, in our current setting, $\mathrm{C2}$ holds since $\ell_k(x,y;\beta)$ is differentiable in $\beta$ and Lipschitz continuous on $\mathbb{T}_k$. To show $\mathrm{C5}$, suppose $r_k(\beta_k^*) = r_{k^*}(\beta_{k^*}^*)$. First assume $\mathbb{T}_{k^*} \subset \mathbb{T}_{k}$. Then,
-    \[
-        \min_{\beta\in\mathbb{T}_k} r_k(\beta) \leq \min_{\beta\in\mathbb{T}_{k^*}} r_{k^*}(\beta),
-    \]
-    and $\beta_{k^*}^*$ is feasible for the larger set $\mathbb{T}_k$ and attains its minimum value. Strict convexity makes the minimiser over $\mathbb{T}_k$ unique, so $\beta_k^*=\beta_{k^*}^*$. The same argument, with the roles reversed, applies when $\mathbb{T}_{k}\subset\mathbb{T}_{k^*}$. Therefore $R_{k,n}(\beta_k^*) - R_{k^*,n}(\beta_{k^*}^*) = 0$ for all $n$, and $\mathrm{C5}$ is satisfied. In the case of Lasso regression, condition $\mathrm{C3}$ follows from the fact that $\mathbb{T}_k$ is polyhedral, for all $C_k\ge0$. For Ridge regression, the defining inequality is twice continuously differentiable and the Mangasarian--Fromovitz constraint qualification holds when $C_k>0$; when $C_k=0$, the slope set is the singleton $\{0\}$ and second-order regularity is immediate. Finally, in the case of Elastic-net regression, fix $\alpha\in(0,1)$ and note the dual representation
-    \[
-    \lVert\beta\rVert_1 = \max_{s\in\{-1,1\}^d} s^\top\beta.
-    \]
-    Hence the Elastic-net constraint is equivalent to the finite system
-    \[
-    (1-\alpha)\lVert\beta\rVert_2^2 + \alpha s^\top\beta \le C_k,\qquad s\in\{-1,1\}^d,
-    \]
-    so $\mathbb{T}_k$ can be written as the intersection $\mathbb{T}_k=\bigcap_{s\in\{-1,1\}^d}\mathbb{T}_{k,s}$ where
-    \[
-    \mathbb{T}_{k,s}=\left\{\beta\in\mathbb{R}^d:(1-\alpha)\lVert\beta\rVert_2^2+\alpha s^\top\beta\le C_k\right\}.
-    \]
-    This is a finite system of twice continuously differentiable convex inequalities. If $C_k>0$, the point $\beta=0$ is strictly feasible. Write $g_s(\beta)=(1-\alpha)\|\beta\|_2^2+\alpha s^\top\beta-C_k$. For any boundary point $\beta$ and every active inequality $g_s(\beta)=0$, convexity gives $\nabla g_s(\beta)^\top(0-\beta)<0$ because $g_s(0)<0$. Hence the Mangasarian--Fromovitz constraint qualification holds for the full finite system, and second-order regularity follows from \citet[Proposition 3.88]{bonnans_perturbation_2000}. If $C_k=0$, then $\mathbb{T}_k=\{0\}$ and second-order regularity is immediate. Condition $\mathrm{C4}$ is satisfied if the Hessian of $r_k$ is positive definite, see \citet[Appendix, discussion of C3 and C4]{nguyen_panic:_2023}. Hence, $\mathrm{C4}$ is satisfied.
-\end{proof}
+where $\mu=\mathbb E(X)$. For every $(a,b)\ne0$,
+\[
+\begin{bmatrix}a\\ b\end{bmatrix}^{\!\top}
+\widetilde\Sigma
+\begin{bmatrix}a\\ b\end{bmatrix}
+=(a+b^\top\mu)^2+b^\top\Sigma b>0.
+\]
+Hence $\widetilde\Sigma$ is positive definite.
 
+For candidate $k$, the population risk is
+\[
+r_k(\theta)=\mathbb E(Y^2)-2\theta^\top\mathbb E(\widetilde X Y)
++\theta^\top\widetilde\Sigma\theta,
+\]
+so its Hessian is $2\widetilde\Sigma$. The risk is therefore continuous and strictly convex. Each candidate parameter set is nonempty, compact, and convex, so it has a unique population minimiser. Proposition \ref{Prop: intercept envelopes} supplies an integrable Lipschitz modulus for the squared loss on that set. Integration of this modulus makes $r_k$ Lipschitz there. These facts verify C1. The squared loss is continuously differentiable in $\theta$, and the same envelope gives the required local Lipschitz control, which verifies C2.
+
+For C3, the Lasso slope set is polyhedral. The Ridge constraint is twice continuously differentiable. When $C_k>0$, the zero slope is strictly feasible, so the Mangasarian--Fromovitz constraint qualification holds. When $C_k=0$, the slope set is the singleton $\{0\}$, which is second-order regular. For Elastic-net, use
+\[
+\|\beta\|_1=\max_{s\in\{-1,1\}^d}s^\top\beta.
+\]
+The constraint is equivalent to the finite system
+\[
+(1-\alpha)\|\beta\|_2^2+\alpha s^\top\beta\le C_k,
+\qquad s\in\{-1,1\}^d.
+\]
+If $C_k>0$, the zero slope is strictly feasible. At any boundary point, the direction towards zero strictly decreases every active convex inequality. Thus the Mangasarian--Fromovitz condition holds for the active system, and second-order regularity follows from \citet[Proposition 3.88]{bonnans_perturbation_2000}. The case $C_k=0$ again gives the singleton $\{0\}$. Taking the Cartesian product with the common compact intercept interval preserves second-order regularity by \citet[Proposition 3.89]{bonnans_perturbation_2000}.
+
+Positive definiteness of the Hessian gives quadratic growth at every candidate minimiser, which verifies C4. Finally, suppose two nested candidates have the same minimum population risk. The minimiser over the smaller set is feasible for the larger set and attains its minimum. Strict convexity makes the larger-set minimiser unique, so the two population minimisers coincide. Their empirical risks are then identical for every sample and every $n$, which verifies C5. The cited consistency theorem now applies.
+\end{proof}
+\end{bluechange}
 
 \subsection{Proof of Lemma \ref{Lemma: continuity}}
 \begin{proof}
@@ -2051,7 +1979,7 @@ Therefore $\beta_\lambda$ is also the unique minimiser of $L(\lambda,\cdot)$ ove
 \[
 m(\lambda)=\min_{\beta\in\phi(\lambda)} L(\lambda,\beta)
 \]
-is upper hemicontinuous. Since it is single-valued, it is continuous as a function \citep[Lemma 17.6]{aliprantis_infinite_2006}. Thus $\lambda\mapsto \beta_\lambda$ is continuous. Finally, $\mathcal{M}(\lambda)=g(\beta_\lambda)$ is continuous as the composition of the continuous maps $\lambda\mapsto\beta_\lambda$ and $g$.
+is upper hemicontinuous. Since it is single-valued, it is continuous as a function \citep[Lemma 17.6]{aliprantis_infinite_2006}. Thus $\lambda\mapsto \beta_\lambda$ is continuous. Finally, $\rho(\lambda)=g(\beta_\lambda)$ is continuous as the composition of the continuous maps $\lambda\mapsto\beta_\lambda$ and $g$.
 \end{proof}
 
 \subsection{Proof of Lemma \ref{Lemma: monotonicity}}

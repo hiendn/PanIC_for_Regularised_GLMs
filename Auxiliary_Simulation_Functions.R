@@ -298,8 +298,8 @@ smallest_minimiser <- function(x, tolerance = 1e-12) {
   min(which(x <= min(x) + tolerance))
 }
 
-support_metrics <- function(beta_hat, truth, active_tolerance = CONFIG$active_tolerance) {
-  selected <- abs(beta_hat) > active_tolerance
+support_metrics <- function(beta_hat, truth) {
+  selected <- beta_hat != 0
   fp <- sum(selected & !truth$support)
   fn <- sum(!selected & truth$support)
   list(
@@ -318,7 +318,7 @@ evaluate_path_index <- function(path, index, method, truth, test, family,
                                 config = CONFIG) {
   beta_hat <- path$beta[, index]
   beta0_hat <- path$beta0[index]
-  sm <- support_metrics(beta_hat, truth, config$active_tolerance)
+  sm <- support_metrics(beta_hat, truth)
   eta_test <- drop(beta0_hat + test$x %*% beta_hat)
   data.frame(
     method = method,
@@ -455,7 +455,7 @@ run_replication <- function(scenario, scenario_index, replication_index,
   }
 
   cv_index <- smallest_minimiser(colMeans(fold_validation_loss))
-  active_count <- colSums(abs(full_path$beta) > config$active_tolerance)
+  active_count <- colSums(full_path$beta != 0)
   monotone_active_count <- cummax(active_count)
   if (family == "gaussian") {
     bic_criterion <- full_path$risk +
@@ -464,7 +464,7 @@ run_replication <- function(scenario, scenario_index, replication_index,
   } else {
     bic_criterion <- full_path$risk +
       0.5 * (monotone_active_count + config$bic_epsilon * psi) * log(n) / n
-    bic_label <- "BIC-active (exploratory)"
+    bic_label <- "BIC-like"
   }
   bic_index <- smallest_minimiser(bic_criterion)
 

@@ -49,6 +49,20 @@ close_enough <- function(x, y, tolerance = 5e-13) {
   isTRUE(all.equal(as.numeric(x), as.numeric(y), tolerance = tolerance,
                    check.attributes = FALSE))
 }
+assessed_methods <- c("PanIC-CF", "BIC-like", "CV")
+obsolete_method_pattern <- paste(
+  c(
+    "PanIC-CF-original", "PanIC-CF-loglog", "CV-min", "CV-1SE",
+    "BIC-active"
+  ),
+  collapse = "|"
+)
+contains_obsolete_method_label <- function(data) {
+  character_columns <- vapply(data, is.character, logical(1))
+  if (!any(character_columns)) return(FALSE)
+  values <- unlist(data[character_columns], use.names = FALSE)
+  any(grepl(obsolete_method_pattern, values))
+}
 
 ## Check the compact release checksum manifest first.
 checksum_path <- assert_file("RESULTS_SHA256.txt")
@@ -68,11 +82,25 @@ record_check(
   checksum_present && identical(unname(checksum_actual), checksum_expected),
   paste0("entries=", length(checksum_entries))
 )
+result_file_names <- list.files(results_dir)
+obsolete_result_files <- grep(
+  "cv[_-]?min|cv[_-]?1se|loglog|panic[^/]*original|bic[_-]?active",
+  result_file_names, value = TRUE, ignore.case = TRUE
+)
+record_check(
+  "obsolete compact-result filenames are absent",
+  !length(obsolete_result_files),
+  if (length(obsolete_result_files)) {
+    paste(obsolete_result_files, collapse = ",")
+  } else {
+    "none"
+  }
+)
 
 implementation <- read_result("implementation_validation.csv")
 record_check(
   "all deterministic implementation checks passed",
-  nrow(implementation) == 21L && all(implementation$passed == 1L),
+  nrow(implementation) == 19L && all(implementation$passed == 1L),
   paste0("passed=", sum(implementation$passed), "/", nrow(implementation))
 )
 
@@ -84,12 +112,16 @@ config_value <- function(item) {
 }
 record_check(
   "production configuration and decision constants",
-  as.integer(config_value("master_seed")) == 2066091802L &&
+  as.integer(config_value("master_seed")) == 2136092001L &&
+    as.integer(config_value("production_master_seed")) == 2136092001L &&
     as.integer(config_value("replications_requested")) == 1000L &&
     as.integer(config_value("independent_test_size")) == 2000L &&
     as.numeric(config_value("prediction_noninferiority_margin")) == 0.001 &&
     config_value("cv_primary_rule") ==
-      "minimum mean five-fold validation loss on radius grid",
+      "minimum mean five-fold validation loss on radius grid" &&
+    config_value("support_definition") ==
+      "beta_hat != 0 (literal fitted nonzero)" &&
+    !contains_obsolete_method_label(configuration),
   paste0("seed=", config_value("master_seed"),
          ";replications=", config_value("replications_requested"))
 )
@@ -135,27 +167,41 @@ record_check(
 )
 
 summary <- read_result("simulation_summary.csv")
-expected_methods <- c(
-  "PanIC-CF", "PanIC-CF-original", "BIC-like",
-  "BIC-active (exploratory)", "CV-min", "CV-1SE"
-)
 method_sets_ok <- all(vapply(split(summary, summary$scenario_id), function(dat) {
-  expected <- c(
-    "PanIC-CF", "PanIC-CF-original",
-    if (dat$family[1L] == "gaussian") "BIC-like" else
-      "BIC-active (exploratory)",
-    "CV-min", "CV-1SE"
-  )
-  setequal(dat$method, expected)
+  setequal(dat$method, assessed_methods)
 }, logical(1)))
 record_check(
   "primary summary is complete",
-  nrow(summary) == 35L && method_sets_ok &&
+  nrow(summary) == 21L && method_sets_ok &&
     all(summary$attempted_replications == 1000L) &&
     all(summary$failed_replications == 0L) &&
-    all(summary$method %in% expected_methods),
+    all(summary$method %in% assessed_methods) &&
+    !contains_obsolete_method_label(summary),
   paste0("rows=", nrow(summary), ";failures=",
          sum(summary$failed_replications))
+)
+
+paired <- read_result("paired_method_contrasts.csv")
+primary_pair <- read_result("paired_panic_cf_vs_cv.csv")
+expected_pair_keys <- c(
+  "PanIC-CF\rCV", "PanIC-CF\rBIC-like", "BIC-like\rCV"
+)
+paired_sets_ok <- all(vapply(split(paired, paired$scenario_id), function(dat) {
+  keys <- paste(dat$lhs_method, dat$rhs_method, sep = "\r")
+  setequal(keys, expected_pair_keys)
+}, logical(1)))
+record_check(
+  "compact paired summaries use the assessed methods",
+  nrow(paired) == 21L && paired_sets_ok &&
+    all(paired$paired_replications == 1000L) &&
+    nrow(primary_pair) == 7L &&
+    identical(primary_pair$scenario_id, SCENARIOS$scenario_id) &&
+    all(primary_pair$lhs_method == "PanIC-CF") &&
+    all(primary_pair$rhs_method == "CV") &&
+    all(primary_pair$paired_replications == 1000L) &&
+    !contains_obsolete_method_label(paired) &&
+    !contains_obsolete_method_label(primary_pair),
+  paste0("all_pairs=", nrow(paired), ";primary_pairs=", nrow(primary_pair))
 )
 
 scenario <- read_result("scenario_primary_estimands.csv")
@@ -197,10 +243,10 @@ record_check(
 denominator_audit <- read_result("relative_deviance_denominator_audit.csv")
 denominator_audit_columns <- c(
   "scenario_id", "family", "n", "rho", "paired_replications",
-  "nonfinite_cv_min_test_deviances",
-  "nonpositive_cv_min_test_deviances",
-  "minimum_cv_min_test_deviance",
-  "maximum_cv_min_test_deviance",
+  "nonfinite_cv_test_deviances",
+  "nonpositive_cv_test_deviances",
+  "minimum_cv_test_deviance",
+  "maximum_cv_test_deviance",
   "nonfinite_relative_contrasts",
   "relative_contrast_mean",
   "relative_contrast_variance",
@@ -224,12 +270,12 @@ audit_finite_ok <- audit_schema_ok && all(vapply(
   logical(1)
 ))
 audit_denominators_ok <- audit_finite_ok &&
-  all(denominator_audit$nonfinite_cv_min_test_deviances == 0L) &&
-  all(denominator_audit$nonpositive_cv_min_test_deviances == 0L) &&
-  all(denominator_audit$minimum_cv_min_test_deviance > 0) &&
+  all(denominator_audit$nonfinite_cv_test_deviances == 0L) &&
+  all(denominator_audit$nonpositive_cv_test_deviances == 0L) &&
+  all(denominator_audit$minimum_cv_test_deviance > 0) &&
   all(
-    denominator_audit$maximum_cv_min_test_deviance >=
-      denominator_audit$minimum_cv_min_test_deviance
+    denominator_audit$maximum_cv_test_deviance >=
+      denominator_audit$minimum_cv_test_deviance
   ) &&
   all(denominator_audit$nonfinite_relative_contrasts == 0L)
 audit_moments_ok <- audit_finite_ok &&
@@ -261,9 +307,9 @@ record_check(
   audit_rows_ok && audit_denominators_ok && audit_moments_ok,
   if (audit_finite_ok && nrow(denominator_audit)) {
     paste0(
-      "minimum_CV_min_deviance=",
+      "minimum_CV_deviance=",
       format(
-        min(denominator_audit$minimum_cv_min_test_deviance),
+        min(denominator_audit$minimum_cv_test_deviance),
         digits = 10L
       ),
       ";maximum_second_moment=",
@@ -294,17 +340,23 @@ zero_diagnostic_columns <- c(
   "full_path_failures", "calibration_failures",
   "calibration_default_uses", "cv_failures",
   "kappa_lower_endpoint_selections", "kappa_upper_endpoint_selections",
-  "original_kappa_lower_endpoint_selections",
-  "original_kappa_upper_endpoint_selections", "solver_warnings"
+  "solver_warnings"
 )
-diagnostic_zero <- all(vapply(zero_diagnostic_columns, function(column) {
-  all(diagnostics[[column]] == 0L)
-}, logical(1)))
+diagnostic_required_columns <- c(
+  "scenario_id", "attempted_replications", zero_diagnostic_columns,
+  "projections", "maximum_radius_interpolation_error"
+)
+diagnostic_schema_ok <- all(diagnostic_required_columns %in% names(diagnostics))
+diagnostic_zero <- diagnostic_schema_ok && all(vapply(
+  zero_diagnostic_columns, function(column) {
+    all(diagnostics[[column]] == 0L)
+  }, logical(1)))
 record_check(
   "production numerical diagnostics",
-  nrow(diagnostics) == 7L &&
+  diagnostic_schema_ok && nrow(diagnostics) == 7L &&
+    identical(diagnostics$scenario_id, SCENARIOS$scenario_id) &&
     all(diagnostics$attempted_replications == 1000L) && diagnostic_zero &&
-    sum(diagnostics$projections) == 1L &&
+    sum(diagnostics$projections) == 0L &&
     max(diagnostics$maximum_radius_interpolation_error) <
       CONFIG$interpolation_radius_tolerance,
   paste0("projections=", sum(diagnostics$projections),
@@ -314,12 +366,12 @@ record_check(
 )
 
 endpoint_methods <- summary$method %in%
-  c("PanIC-CF", "PanIC-CF-original", "CV-min", "CV-1SE")
+  c("PanIC-CF", "CV")
 record_check(
   "primary and CV selections avoid radius-grid endpoints",
   all(summary$selected_lower_endpoint_mean[endpoint_methods] == 0) &&
     all(summary$selected_upper_endpoint_mean[endpoint_methods] == 0),
-  "PanIC-CF, original-weight PanIC-CF, CV-min, and CV-1SE"
+  "PanIC-CF and CV"
 )
 
 calibration <- read_result("calibration_target_summary.csv")
@@ -332,15 +384,23 @@ record_check(
 )
 
 grid <- read_result("grid_sensitivity_summary.csv")
-grid_expected_methods <- c(
-  "PanIC-CF", "PanIC-CF-original", "BIC-like", "CV-min", "CV-1SE"
+grid_configuration <- read_result("grid_sensitivity_configuration.csv")
+grid_config_methods <- grid_configuration$value[
+  grid_configuration$item == "methods"
+]
+grid_required_columns <- c(
+  "radius_points", "method", "attempted_replications", "method_failures",
+  "full_path_failures", "calibration_failures",
+  "calibration_default_uses", "cv_failures",
+  "maximum_radius_interpolation_error"
 )
+grid_schema_ok <- all(grid_required_columns %in% names(grid))
 grid_sets_ok <- all(vapply(split(grid$method, grid$radius_points), function(x) {
-  setequal(x, grid_expected_methods)
+  setequal(x, assessed_methods)
 }, logical(1)))
 record_check(
   "grid sensitivity summary and diagnostics",
-  nrow(grid) == 15L &&
+  grid_schema_ok && nrow(grid) == 9L &&
     identical(sort(unique(grid$radius_points)), c(61L, 121L, 241L)) &&
     grid_sets_ok && all(grid$attempted_replications == 500L) &&
     all(grid$method_failures == 0L) &&
@@ -348,22 +408,34 @@ record_check(
     all(grid$calibration_failures == 0L) &&
     all(grid$calibration_default_uses == 0L) &&
     all(grid$cv_failures == 0L) &&
+    length(grid_config_methods) == 1L &&
+    identical(strsplit(grid_config_methods, ";", fixed = TRUE)[[1L]],
+              assessed_methods) &&
+    !contains_obsolete_method_label(grid_configuration) &&
+    !contains_obsolete_method_label(grid) &&
     max(grid$maximum_radius_interpolation_error) <
       CONFIG$interpolation_radius_tolerance,
   paste0("rows=", nrow(grid), ";max_interpolation_error=",
          format(max(grid$maximum_radius_interpolation_error), scientific = TRUE))
 )
 
+grid_pairs <- read_result("grid_sensitivity_paired_contrasts.csv")
 grid_contrasts <- read_result("grid_sensitivity_method_contrasts.csv")
 panic_grid_contrasts <- grid_contrasts[
   grid_contrasts$lhs_method == "PanIC-CF" &
-    grid_contrasts$rhs_method == "CV-min",
+    grid_contrasts$rhs_method == "CV",
 ]
 record_check(
-  "PanIC-CF grid contrasts to CV-min are present and favorable",
-  nrow(panic_grid_contrasts) == 3L &&
+  "compact grid contrasts use the assessed methods",
+  nrow(grid_pairs) == 9L &&
+    setequal(unique(grid_pairs$method), assessed_methods) &&
+    all(grid_pairs$paired_replications == 500L) &&
+    nrow(grid_contrasts) == 9L &&
+    nrow(panic_grid_contrasts) == 3L &&
     all(panic_grid_contrasts$paired_replications == 500L) &&
-    all(panic_grid_contrasts$wrong_difference < 0),
+    all(panic_grid_contrasts$wrong_difference < 0) &&
+    !contains_obsolete_method_label(grid_pairs) &&
+    !contains_obsolete_method_label(grid_contrasts),
   paste(sprintf("m=%d:%.3f", panic_grid_contrasts$radius_points,
                 panic_grid_contrasts$wrong_difference), collapse = ";")
 )
@@ -377,6 +449,38 @@ record_check(
     any(grepl("_raw[.]rds$", manifest$relative_path)) &&
     any(grepl("_calibration_rows[.]csv$", manifest$relative_path)),
   paste0("entries=", nrow(manifest))
+)
+active_compact_outputs <- list(
+  implementation = implementation,
+  configuration = configuration,
+  registry = registry,
+  seed_ledger = seed_ledger,
+  simulation_summary = summary,
+  paired_method_contrasts = paired,
+  paired_panic_cf_vs_cv = primary_pair,
+  scenario_primary_estimands = scenario,
+  confirmatory_decision = decision,
+  denominator_audit = denominator_audit,
+  margin_sensitivity = margins,
+  diagnostic_summary = diagnostics,
+  calibration_summary = calibration,
+  grid_configuration = grid_configuration,
+  grid_summary = grid,
+  grid_pairs = grid_pairs,
+  grid_method_contrasts = grid_contrasts,
+  production_manifest = manifest
+)
+obsolete_output_frames <- names(active_compact_outputs)[vapply(
+  active_compact_outputs, contains_obsolete_method_label, logical(1)
+)]
+record_check(
+  "active compact outputs contain no obsolete method labels",
+  !length(obsolete_output_frames),
+  if (length(obsolete_output_frames)) {
+    paste(obsolete_output_frames, collapse = ",")
+  } else {
+    "none"
+  }
 )
 
 table_names <- c(
@@ -456,22 +560,45 @@ decision_table <- paste(
   collapse = "\n"
 )
 record_check(
-  "manuscript-facing tables use final labels and no TODO markers",
-  !grepl("TODO|BIC-active|second-confirmation|revised PanIC-CF", table_text,
-         ignore.case = TRUE) &&
-    grepl("CV-min", table_text, fixed = TRUE) &&
-    grepl("CV-1SE", table_text, fixed = TRUE) &&
-    grepl("exploratory", table_text, ignore.case = TRUE),
+  "manuscript-facing tables use the three assessed labels",
+  !grepl(
+    paste0(
+      "TODO|", obsolete_method_pattern,
+      "|second-confirmation|revised PanIC-CF"
+    ),
+    table_text,
+    ignore.case = TRUE
+  ) &&
+    grepl(" & PanIC-CF & ", table_text, fixed = TRUE) &&
+    grepl(" & BIC-like & ", table_text, fixed = TRUE) &&
+    grepl(" & CV & ", table_text, fixed = TRUE),
   paste(table_names, collapse = ",")
 )
 record_check(
   "confirmatory table agrees with locked decision",
-  grepl("-0.43814", decision_table, fixed = TRUE) &&
-    grepl("-0.40854", decision_table, fixed = TRUE) &&
-    grepl("0.000160", decision_table, fixed = TRUE) &&
-    grepl("0.000214", decision_table, fixed = TRUE) &&
+  grepl(sprintf("%.5f", decision$support_estimate),
+        decision_table, fixed = TRUE) &&
+    grepl(sprintf("%.5f", decision$support_mcse),
+          decision_table, fixed = TRUE) &&
+    grepl(sprintf("%.5f", decision$support_upper_one_sided_95),
+          decision_table, fixed = TRUE) &&
+    grepl(sprintf("%.6f", decision$prediction_estimate),
+          decision_table, fixed = TRUE) &&
+    grepl(sprintf("%.6f", decision$prediction_mcse),
+          decision_table, fixed = TRUE) &&
+    grepl(sprintf("%.6f", decision$prediction_upper_one_sided_95),
+          decision_table, fixed = TRUE) &&
     grepl("<0.001", gsub("\\\\", "", decision_table), fixed = TRUE),
   "displayed estimates, upper bounds, and decision thresholds"
+)
+
+manuscript_text <- paste(readLines(manuscript_path, warn = FALSE),
+                         collapse = "\n")
+record_check(
+  "manuscript contains no TODO or obsolete assessed-method labels",
+  !grepl("TODO", manuscript_text, ignore.case = TRUE) &&
+    !grepl(obsolete_method_pattern, manuscript_text),
+  "manuscript/main.tex"
 )
 
 artifact_names <- c("figure_runtime.pdf", "figure_boundary_subsampling.pdf")

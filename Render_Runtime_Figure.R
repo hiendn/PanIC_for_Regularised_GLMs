@@ -30,15 +30,12 @@ labels <- c(gaussian = "Gaussian", binomial = "Logistic", poisson = "Poisson")
 cols <- c("#2166AC", "#67A9CF", "#B2182B")
 for (family in families) {
   subset <- runtime[runtime$family == family & runtime$failed == 0L, ]
-  methods <- c(
-    "Revised PanIC-CF", "5-fold CV",
-    if (family == "gaussian") "BIC-like" else "Exploratory active-count"
-  )
+  methods <- c("PanIC-CF", "CV", "BIC-like")
   split_values <- lapply(methods, function(method) {
     subset$elapsed_seconds[subset$method == method]
   })
   method_labels <- c(
-    "PanIC-CF", "Shared\n5-fold CV", "BIC-like"
+    "PanIC-CF", "CV", "BIC-like"
   )
   boxplot(
     split_values, names = method_labels,
