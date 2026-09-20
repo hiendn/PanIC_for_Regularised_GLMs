@@ -30,6 +30,7 @@ results/*
 !results/scenario_primary_estimands.csv
 !results/confirmatory_decision.csv
 !results/prediction_margin_sensitivity.csv
+!results/relative_deviance_denominator_audit.csv
 !results/calibration_target_summary.csv
 !results/diagnostic_summary.csv
 !results/grid_sensitivity_configuration.csv
@@ -43,6 +44,9 @@ results/*
 !results/subsampling_summary.csv
 !results/solver_validation.csv
 !results/gamma_validation.csv
+# These retained table fragments are checksum-controlled mirrors of the seven
+# table blocks embedded in manuscript/main.tex; they are not LaTeX compilation
+# inputs.
 !results/table_primary_support.tex
 !results/table_primary_performance.tex
 !results/table_confirmatory_decision.tex

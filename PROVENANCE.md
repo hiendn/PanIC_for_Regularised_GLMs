@@ -72,8 +72,12 @@ An independent verifier reconstructed the production summaries from the raw
 RDS objects and matched the retained summaries to less than `5e-16`. All 21
 deterministic checks, the full main result verifier, and the grid verifier
 passed. The full result directory's file names, byte sizes, and SHA-256 hashes
-are retained in `results/production_file_manifest.csv` even though the bulky
-replication-level files are not committed.
+at completion of that run are retained in
+`results/production_file_manifest.csv` even though the bulky replication-level
+files are not committed. This is intentionally an immutable historical
+snapshot and therefore retains the original `manuscript_generated` paths. The
+later self-contained release archive supplies a separate manifest for its
+actual payload.
 
 ## Repository packaging
 
@@ -90,3 +94,29 @@ Repository packaging made only auditable, non-statistical changes:
   `BIC-like` while retaining the explicit exploratory-scope qualification.
 
 No production outcome was recomputed or selected during packaging.
+
+## Self-contained-table and denominator-audit amendment
+
+The subsequent self-contained-table release made a bounded presentation and
+reproducibility amendment. `manuscript/main.tex` now embeds all seven final
+table environments directly between stable marker comments, so it has no
+external table-file dependency. The files under
+`results/table_*.tex` remain deterministic, checksum-controlled mirrors for
+regeneration and audit. `Manuscript_Table_Rendering.R` and
+`Render_Manuscript_Tables.R` reconstruct the seven mirrors from the retained
+compact summaries, while `Manuscript_Table_Tools.R` refreshes or verifies the
+embedded blocks byte-for-byte and rejects any remaining external table
+reference.
+
+The same release makes the domain of the paired relative test-deviance
+estimand explicit. Every `CV-min` denominator must be finite and strictly
+positive; analysis and independent verification fail on any violation. No
+replication is discarded, and no floor or replacement is applied. The added
+`relative_deviance_denominator_audit.csv` records the realised denominator
+range and finite-sample relative-contrast moments by scenario, and the
+full-result verifier reconstructs it from the archived paired rows.
+
+These changes do not alter the statistical procedure, estimands, margins,
+seeds, simulation rows, retained summaries, or decision rule. Rendering the
+tables and reconstructing the denominator audit from the retained results
+leave every reported numerical result unchanged.

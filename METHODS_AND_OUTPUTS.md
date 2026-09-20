@@ -92,6 +92,16 @@ For prediction, the replication-level paired contrast is scale-free:
 q_sr = (D_PanIC-CF,sr - D_CV-min,sr) / D_CV-min,sr.
 ```
 
+The implemented estimand is defined only when every paired `CV-min` test
+deviance in the denominator is finite and strictly positive. This condition is
+enforced before division. A violation stops analysis and verification; no
+replication is deleted, and no denominator is floored, replaced, or otherwise
+regularized. The scenario-level audit records the minimum and maximum realised
+denominators, counts of nonfinite or nonpositive denominators and nonfinite
+relative contrasts, and the mean, variance, second moment, and maximum absolute
+value of the relative contrast. The independent full-result verifier
+reconstructs this audit from the paired replication rows.
+
 The equal-weight mean and MCSE use the same formulas. Prediction
 noninferiority passes when its one-sided 95% upper normal Monte Carlo bound is
 below the prospectively fixed margin `0.001`. Sensitivity margins `0.0005`,
@@ -134,15 +144,46 @@ bounds happen to pass.
   effects with one-sided upper bounds.
 - `confirmatory_decision.csv`: the locked aggregate effects and joint gate.
 - `prediction_margin_sensitivity.csv`: primary and sensitivity margins.
+- `relative_deviance_denominator_audit.csv`: scenario-level domain audit and
+  empirical second-moment diagnostic for the paired relative-deviance
+  contrast.
 - `diagnostic_summary.csv` and `calibration_target_summary.csv`: numerical and
   target diagnostics.
-- `manuscript_generated/table_primary_support.tex` and
-  `table_confirmatory_decision.tex`: manuscript-ready tables.
+- `table_primary_support.tex`, `table_primary_performance.tex`,
+  `table_confirmatory_decision.tex`, and `table_calibration.tex`: canonical
+  deterministic mirrors of the four main-study tables embedded in the
+  manuscript.
 
 ## Grid outputs
 
 The fresh-seed grid study produces replication files for 61, 121, and 241
 radii, `grid_sensitivity_summary.csv`, paired across-grid contrasts,
-within-grid method contrasts, a locked grid configuration, and
-`manuscript_generated/table_grid_sensitivity.tex`. Data, streams, raw targets,
-and both weights must match across grids before the runner completes.
+within-grid method contrasts, a locked grid configuration, and the canonical
+`table_grid_sensitivity.tex` mirror. Data, streams, raw targets, and both
+weights must match across grids before the runner completes.
+
+## Deterministic manuscript-table layer
+
+`Manuscript_Table_Rendering.R` deterministically renders all seven final table
+fragments from the retained compact CSV summaries. The command-line entry point
+
+```sh
+Rscript Render_Manuscript_Tables.R \
+  --results-dir=results --output-dir=/tmp/panic-tables
+```
+
+does not fit a model, draw a random number, or alter a statistical result. The
+checksum-controlled files under `results/table_*.tex` are reproducibility
+mirrors of the rendered output.
+
+`manuscript/main.tex` embeds exact copies of all seven table environments
+between stable `PANIC INLINE TABLE` marker comments. It does not load the
+mirror files. `Manuscript_Table_Tools.R --verify` checks byte-for-byte
+agreement between each embedded block and its mirror and fails if any external
+table-file reference remains. Its `--refresh` mode replaces the seven marked
+blocks from the mirrors and immediately performs the same verification.
+
+This deterministic rendering and embedding layer is a presentation and
+reproducibility amendment. It leaves the locked method, estimands, production
+seeds, retained simulation rows, summaries, decision bounds, and all reported
+numerical results unchanged.

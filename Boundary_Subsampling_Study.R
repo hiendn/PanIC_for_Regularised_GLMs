@@ -1,10 +1,22 @@
 #!/usr/bin/env Rscript
 
+args <- commandArgs(trailingOnly = TRUE)
+arg_value <- function(prefix, default = NULL) {
+  hit <- grep(paste0("^", prefix, "="), args, value = TRUE)
+  if (!length(hit)) return(default)
+  sub(paste0("^", prefix, "="), "", hit[[1L]])
+}
 script_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 script_path <- if (length(script_arg)) sub("^--file=", "", script_arg[[1L]]) else "Boundary_Subsampling_Study.R"
 replication_dir <- normalizePath(dirname(script_path))
 source(file.path(replication_dir, "Auxiliary_Config.R"))
-results_dir <- file.path(replication_dir, "results")
+source(file.path(replication_dir, "Manuscript_Table_Rendering.R"))
+output_name <- arg_value("--output-dir", "results")
+results_dir <- if (grepl("^/", output_name)) {
+  output_name
+} else {
+  file.path(replication_dir, output_name)
+}
 generated_dir <- results_dir
 dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 dir.create(generated_dir, recursive = TRUE, showWarnings = FALSE)
@@ -163,3 +175,24 @@ legend(
   col = c("black", cols), lty = 1, lwd = c(1.6, rep(1.1, 3))
 )
 dev.off()
+
+## Render from the retained summaries, which are the public formatting
+## contract for deterministic reproduction of the displayed values.
+render_boundary_summary <- read.csv(
+  file.path(results_dir, "boundary_summary.csv"),
+  stringsAsFactors = FALSE, check.names = FALSE
+)
+render_subsampling_summary <- read.csv(
+  file.path(results_dir, "subsampling_summary.csv"),
+  stringsAsFactors = FALSE, check.names = FALSE
+)
+auxiliary_tables <- setNames(
+  list(
+    render_boundary_table(render_boundary_summary),
+    render_subsampling_table(
+      render_subsampling_summary, render_boundary_summary
+    )
+  ),
+  c("table_boundary.tex", "table_subsampling.tex")
+)
+write_manuscript_table_subset(auxiliary_tables, results_dir)

@@ -16,6 +16,7 @@ candidate_dir <- dirname(script_path)
 source(file.path(candidate_dir, "Method_Lock_Verification.R"))
 verify_method_lock(candidate_dir)
 source(file.path(candidate_dir, "Simulation_Config.R"))
+source(file.path(candidate_dir, "Manuscript_Table_Rendering.R"))
 output_name <- arg_value("--output-dir", CONFIG$default_output_dir)
 results_dir <- if (grepl("^/", output_name)) {
   output_name
@@ -76,6 +77,8 @@ method_order <- c(
   CONFIG$primary_cv_method, CONFIG$secondary_cv_method
 )
 calibration_by_grid <- list()
+primary_by_grid <- list()
+diagnostic_by_grid <- list()
 for (m in CONFIG$grid_sensitivity_points) {
   primary <- read_result(paste0("grid_sensitivity_m", m, "_primary.csv"))
   diagnostic <- read_result(
@@ -85,6 +88,8 @@ for (m in CONFIG$grid_sensitivity_points) {
     paste0("grid_sensitivity_m", m, "_calibration_rows.csv")
   )
   calibration_by_grid[[as.character(m)]] <- calibration
+  primary_by_grid[[as.character(m)]] <- primary
+  diagnostic_by_grid[[as.character(m)]] <- diagnostic
   assert(nrow(primary) == 5L * n_rep,
          paste0("m=", m, ": primary row count mismatch"))
   assert(nrow(diagnostic) == n_rep,
@@ -147,13 +152,107 @@ assert(nrow(method_contrasts) == 12L,
        "Grid method table must contain four comparisons on three grids")
 assert(all(summary$attempted_replications == n_rep),
        "Grid summary replication count mismatch")
-assert(file.exists(file.path(
-  results_dir, "manuscript_generated", "table_grid_sensitivity.tex"
-)), "Missing grid-sensitivity LaTeX table")
+
+## Independently reconstruct every summary field displayed in the grid table
+## from the replication-level primary and diagnostic rows.
+all_grid_primary <- do.call(rbind, primary_by_grid)
+all_grid_diagnostic <- do.call(rbind, diagnostic_by_grid)
+grid_mcse <- function(x) {
+  x <- x[is.finite(x)]
+  if (length(x) <= 1L) return(NA_real_)
+  sd(x) / sqrt(length(x))
+}
+grid_metrics <- c(
+  "fp", "fn", "fpr", "fnr", "exact", "wrong",
+  "signed_attained_radius_error", "test_deviance",
+  "selected_grid_radius", "attained_radius",
+  "selected_lower_endpoint", "selected_upper_endpoint"
+)
+expected_grid_rows <- lapply(
+  split(
+    all_grid_primary,
+    interaction(
+      all_grid_primary$radius_points, all_grid_primary$method, drop = TRUE
+    )
+  ),
+  function(dat) {
+    out <- dat[1L, c("radius_points", "method")]
+    out$grid_spacing <- (CONFIG$radius_max - CONFIG$radius_min) /
+      (out$radius_points - 1L)
+    out$attempted_replications <- nrow(dat)
+    out$method_failures <- sum(dat$method_failed)
+    for (metric in grid_metrics) {
+      out[[paste0(metric, "_mean")]] <- mean(dat[[metric]], na.rm = TRUE)
+      out[[paste0(metric, "_mcse")]] <- grid_mcse(dat[[metric]])
+    }
+    diagnostic <- all_grid_diagnostic[
+      all_grid_diagnostic$radius_points == out$radius_points,
+    ]
+    out$full_path_failures <- sum(diagnostic$full_path_failed)
+    out$calibration_failures <- sum(diagnostic$calibration_failed)
+    out$calibration_default_uses <- sum(diagnostic$default_used)
+    out$cv_failures <- sum(diagnostic$cv_failed)
+    out$mean_shared_runtime <- mean(
+      diagnostic$elapsed_seconds, na.rm = TRUE
+    )
+    out$mcse_shared_runtime <- grid_mcse(diagnostic$elapsed_seconds)
+    out$maximum_radius_interpolation_error <- max(
+      diagnostic$maximum_active_radius_error, na.rm = TRUE
+    )
+    out
+  }
+)
+expected_grid_summary <- do.call(rbind, expected_grid_rows)
+reported_grid_key <- paste(summary$radius_points, summary$method, sep = "\r")
+expected_grid_key <- paste(
+  expected_grid_summary$radius_points,
+  expected_grid_summary$method,
+  sep = "\r"
+)
+grid_match <- match(reported_grid_key, expected_grid_key)
+assert(
+  !anyNA(grid_match) && !anyDuplicated(reported_grid_key) &&
+    !anyDuplicated(expected_grid_key),
+  "Grid-summary radius/method keys are incomplete or duplicated"
+)
+expected_grid_summary <- expected_grid_summary[grid_match, , drop = FALSE]
+rownames(expected_grid_summary) <- NULL
+rownames(summary) <- NULL
+grid_character_columns <- "method"
+grid_numeric_columns <- setdiff(names(summary), grid_character_columns)
+assert(
+  identical(
+    summary[grid_character_columns],
+    expected_grid_summary[grid_character_columns]
+  ) &&
+    isTRUE(all.equal(
+      summary[grid_numeric_columns],
+      expected_grid_summary[grid_numeric_columns],
+      tolerance = 1e-12, check.attributes = FALSE
+    )),
+  "Grid table summary was not reproduced from raw rows"
+)
+grid_table_path <- file.path(results_dir, "table_grid_sensitivity.tex")
+assert(file.exists(grid_table_path),
+       "Missing canonical grid-sensitivity table mirror")
 assert(file.exists(file.path(results_dir, "grid_locked_configuration.rds")),
        "Missing locked grid configuration")
+expected_grid_table_bytes <- panic_table_bytes(
+  render_grid_sensitivity_table(summary)
+)
+observed_grid_table_size <- file.info(grid_table_path)$size
+observed_grid_table_bytes <- readBin(
+  grid_table_path, what = "raw", n = observed_grid_table_size
+)
+assert(
+  identical(
+    observed_grid_table_size,
+    as.numeric(length(expected_grid_table_bytes))
+  ) && identical(observed_grid_table_bytes, expected_grid_table_bytes),
+  "Canonical grid-sensitivity table mirror is stale or non-deterministic"
+)
 grid_table_text <- paste(readLines(
-  file.path(results_dir, "manuscript_generated", "table_grid_sensitivity.tex"),
+  grid_table_path,
   warn = FALSE
 ), collapse = "\n")
 assert(!grepl("BIC-active \\(exploratory\\)", grid_table_text) &&

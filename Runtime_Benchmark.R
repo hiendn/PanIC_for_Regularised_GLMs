@@ -19,9 +19,7 @@ source(file.path(
 output_name <- arg_value("--output-dir", "results")
 results_dir <- if (grepl("^/", output_name)) output_name else
   file.path(production_dir, output_name)
-generated_dir <- file.path(results_dir, "manuscript_generated")
 dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
-dir.create(generated_dir, recursive = TRUE, showWarnings = FALSE)
 
 runtime_seed <- function(family_index, replication, warmup = FALSE) {
   offset <- if (warmup) 9500000L else 9000000L

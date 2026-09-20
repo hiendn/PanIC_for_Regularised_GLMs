@@ -15,14 +15,13 @@ if (!exists("results_dir", inherits = FALSE)) {
   results_dir <- if (grepl("^/", output_name)) output_name else
     file.path(production_dir, output_name)
 }
-generated_dir <- file.path(results_dir, "manuscript_generated")
-dir.create(generated_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 runtime <- read.csv(file.path(results_dir, "runtime_raw.csv"),
                     stringsAsFactors = FALSE)
 families <- c("gaussian", "binomial", "poisson")
 
 pdf(
-  file.path(generated_dir, "figure_runtime.pdf"),
+  file.path(results_dir, "figure_runtime.pdf"),
   width = 7.2, height = 3.8, family = "Helvetica", pointsize = 9
 )
 par(mfrow = c(1, 3), mar = c(5.5, 3.8, 2.0, 0.7),

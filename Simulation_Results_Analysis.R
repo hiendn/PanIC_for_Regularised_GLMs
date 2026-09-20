@@ -16,14 +16,14 @@ candidate_dir <- dirname(script_path)
 source(file.path(candidate_dir, "Method_Lock_Verification.R"))
 verify_method_lock(candidate_dir)
 source(file.path(candidate_dir, "Simulation_Config.R"))
+source(file.path(candidate_dir, "Manuscript_Table_Rendering.R"))
 output_name <- arg_value("--output-dir", CONFIG$default_output_dir)
 results_dir <- if (grepl("^/", output_name)) {
   output_name
 } else {
   file.path(candidate_dir, output_name)
 }
-generated_dir <- file.path(results_dir, "manuscript_generated")
-dir.create(generated_dir, recursive = TRUE, showWarnings = FALSE)
+dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 
 read_all <- function(suffix) {
   paths <- file.path(results_dir, paste0(SCENARIOS$scenario_id, suffix))
@@ -121,9 +121,26 @@ paired_method_contrast <- function(dat, lhs_method, rhs_method) {
     out[[paste0(metric, "_difference")]] <- mean(delta)
     out[[paste0(metric, "_difference_mcse")]] <- mcse(delta)
   }
+  denominator <- paired$test_deviance_rhs
+  if (any(!is.finite(denominator) | denominator <= 0)) {
+    stop(
+      "Relative test-deviance denominators must be finite and strictly ",
+      "positive for ", lhs_method, " versus ", rhs_method, " in ",
+      paired$scenario_id[1L],
+      "; no replication is discarded and no denominator floor is applied",
+      call. = FALSE
+    )
+  }
+  numerator <- paired$test_deviance_lhs - denominator
+  if (any(!is.finite(numerator))) {
+    stop(
+      "Relative test-deviance numerators must be finite for ", lhs_method,
+      " versus ", rhs_method, " in ", paired$scenario_id[1L],
+      call. = FALSE
+    )
+  }
   relative_deviance <-
-    (paired$test_deviance_lhs - paired$test_deviance_rhs) /
-    paired$test_deviance_rhs
+    numerator / denominator
   out$relative_test_deviance_difference <- mean(relative_deviance)
   out$relative_test_deviance_difference_mcse <- mcse(relative_deviance)
   out
@@ -182,6 +199,52 @@ primary_scenario$relative_deviance_upper_one_sided_95 <-
 write.csv(primary_scenario,
           file.path(results_dir, "scenario_primary_estimands.csv"),
           row.names = FALSE)
+
+## The relative-deviance estimand is evaluated without deleting observations
+## or replacing a zero denominator.  A nonfinite or nonpositive comparator
+## deviance is a hard verification failure.  Retain a scenario-level audit so
+## the compact release documents the realised denominator range and the
+## finite-sample second moments used by the Monte Carlo calculation.
+denominator_audit_rows <- lapply(seq_len(nrow(SCENARIOS)), function(i) {
+  scenario_id <- SCENARIOS$scenario_id[i]
+  dat <- primary[primary$scenario_id == scenario_id, , drop = FALSE]
+  lhs <- dat[dat$method == "PanIC-CF" & dat$method_failed == 0L, ]
+  rhs <- dat[
+    dat$method == CONFIG$primary_cv_method & dat$method_failed == 0L,
+  ]
+  paired <- merge(
+    lhs, rhs, by = c("scenario_id", "replication"),
+    suffixes = c("_lhs", "_rhs")
+  )
+  denominator <- paired$test_deviance_rhs
+  relative_contrast <-
+    (paired$test_deviance_lhs - denominator) / denominator
+  data.frame(
+    scenario_id = scenario_id,
+    family = SCENARIOS$family[i],
+    n = SCENARIOS$n[i],
+    rho = SCENARIOS$rho[i],
+    paired_replications = nrow(paired),
+    nonfinite_cv_min_test_deviances = sum(!is.finite(denominator)),
+    nonpositive_cv_min_test_deviances = sum(
+      is.finite(denominator) & denominator <= 0
+    ),
+    minimum_cv_min_test_deviance = min(denominator),
+    maximum_cv_min_test_deviance = max(denominator),
+    nonfinite_relative_contrasts = sum(!is.finite(relative_contrast)),
+    relative_contrast_mean = mean(relative_contrast),
+    relative_contrast_variance = var(relative_contrast),
+    relative_contrast_second_moment = mean(relative_contrast^2),
+    maximum_absolute_relative_contrast = max(abs(relative_contrast)),
+    stringsAsFactors = FALSE
+  )
+})
+denominator_audit <- do.call(rbind, denominator_audit_rows)
+write.csv(
+  denominator_audit,
+  file.path(results_dir, "relative_deviance_denominator_audit.csv"),
+  row.names = FALSE
+)
 
 complete_pairing <- all(
   primary_scenario$paired_replications == run_n_rep
@@ -324,83 +387,48 @@ write.csv(target_summary,
           file.path(results_dir, "calibration_target_summary.csv"),
           row.names = FALSE)
 
-scenario_labels <- c(
-  linear_iid_n500 = "Gaussian independent, $n=500$",
-  linear_iid_n2000 = "Gaussian independent, $n=2000$",
-  logistic_iid_n500 = "Logistic independent, $n=500$",
-  logistic_iid_n2000 = "Logistic independent, $n=2000$",
-  linear_ar1_n1000 = "Gaussian AR(1), $n=1000$",
-  logistic_ar1_n1000 = "Logistic AR(1), $n=1000$",
-  poisson_iid_n1000 = "Poisson independent, $n=1000$"
+## Render only from the persisted summaries.  This makes the public CSV files
+## the single presentation contract and avoids platform-dependent last-digit
+## differences when an in-memory binary value lies on a display-rounding tie.
+render_simulation_summary <- read.csv(
+  file.path(results_dir, "simulation_summary.csv"),
+  stringsAsFactors = FALSE, check.names = FALSE
 )
-cell <- function(estimate, se, digits = 3L) {
-  sprintf(paste0("%.", digits, "f (%.", digits, "f)"), estimate, se)
-}
-reader_method <- function(method) {
-  ifelse(method == "BIC-active (exploratory)", "BIC-like", method)
-}
-support_lines <- c(
-  "\\begin{table}[H]", "\\centering",
-  paste0(
-    "\\caption{Support recovery for PanIC-CF and the prespecified ",
-    "comparators. ",
-    "Entries are Monte Carlo means with Monte Carlo standard errors in ",
-    "parentheses over ", run_n_rep, " attempted replications. ",
-    "PanIC-CF-original is a same-path sensitivity analysis; CV-1SE is a ",
-    "secondary trade-off comparator. The logistic and Poisson BIC-like ",
-    "rows are exploratory active-count analogues outside the scope of the ",
-    "Gaussian BIC-like proposition.}"
+render_run_configuration <- read.csv(
+  file.path(results_dir, "configuration.csv"),
+  stringsAsFactors = FALSE, check.names = FALSE
+)
+render_confirmatory_decision <- read.csv(
+  file.path(results_dir, "confirmatory_decision.csv"),
+  stringsAsFactors = FALSE, check.names = FALSE
+)
+render_target_summary <- read.csv(
+  file.path(results_dir, "calibration_target_summary.csv"),
+  stringsAsFactors = FALSE, check.names = FALSE
+)
+render_diagnostic_summary <- read.csv(
+  file.path(results_dir, "diagnostic_summary.csv"),
+  stringsAsFactors = FALSE, check.names = FALSE
+)
+main_tables <- setNames(
+  list(
+    render_primary_support_table(
+      render_simulation_summary, render_run_configuration
+    ),
+    render_primary_performance_table(
+      render_simulation_summary, render_run_configuration
+    ),
+    render_confirmatory_decision_table(render_confirmatory_decision),
+    render_calibration_table(
+      render_target_summary, render_diagnostic_summary
+    )
   ),
-  "\\label{Table: second confirmation support}",
-  "\\begin{adjustbox}{width=\\textwidth}", "\\scriptsize",
-  "\\begin{tabular}{llrrrr}", "\\hline",
-  "Setting & Method & FP & FN & Exact & Total support error \\\\",
-  "\\hline"
+  c(
+    "table_primary_support.tex", "table_primary_performance.tex",
+    "table_confirmatory_decision.tex", "table_calibration.tex"
+  )
 )
-last <- ""
-for (i in seq_len(nrow(simulation_summary))) {
-  row <- simulation_summary[i, ]
-  label <- if (row$scenario_id != last) {
-    scenario_labels[[row$scenario_id]]
-  } else {
-    ""
-  }
-  last <- row$scenario_id
-  support_lines <- c(support_lines, paste0(
-    label, " & ", reader_method(row$method), " & ",
-    cell(row$fp_mean, row$fp_mcse, 2), " & ",
-    cell(row$fn_mean, row$fn_mcse, 2), " & ",
-    cell(row$exact_mean, row$exact_mcse, 3), " & ",
-    cell(row$wrong_mean, row$wrong_mcse, 2), " \\\\"
-  ))
-}
-support_lines <- c(
-  support_lines, "\\hline", "\\end{tabular}",
-  "\\end{adjustbox}", "\\end{table}"
-)
-writeLines(support_lines,
-           file.path(generated_dir, "table_primary_support.tex"))
+write_manuscript_table_subset(main_tables, results_dir)
 
-decision_lines <- c(
-  "\\begin{table}[H]", "\\centering",
-  "\\caption{Prespecified joint confirmatory decision.}",
-  "\\label{Table: second confirmation decision}",
-  "\\begin{tabular}{lrrrr}", "\\hline",
-  "Endpoint & Estimate & MCSE & One-sided 95\\% upper bound & Criterion \\\\",
-  "\\hline",
-  sprintf(
-    "Total support error & %.5f & %.5f & %.5f & $<0$ \\\\",
-    support_estimate, support_mcse, support_upper
-  ),
-  sprintf(
-    "Relative test deviance & %.6f & %.6f & %.6f & $<%.3f$ \\\\",
-    prediction_estimate, prediction_mcse, prediction_upper,
-    CONFIG$prediction_noninferiority_margin
-  ),
-  "\\hline", "\\end{tabular}", "\\end{table}"
-)
-writeLines(decision_lines,
-           file.path(generated_dir, "table_confirmatory_decision.tex"))
-
-cat("Confirmatory summaries and manuscript tables written to ", results_dir,
-    ".\n", sep = "")
+cat("Confirmatory summaries and canonical table mirrors written to ",
+    results_dir, ".\n", sep = "")

@@ -1,6 +1,9 @@
 PanIC-CF compact committed-result manifest
 =========================================
 
+The self-updating results/repository_verification.csv report is intentionally
+excluded to avoid making the verifier's output part of its own input digest.
+
 4662bf34fab14f22e9de1457724efaa1306f3e10a1dc44890bdc12bcc5e7d494  results/boundary_summary.csv
 ea0a0ec50d6a3f7a96138cdcf8114352355f3c7a4c6941cfba05d3e3e2880c4f  results/calibration_target_summary.csv
 15bcde2a45d4a35fb1f0e23ad2a56c88f3cf773df686987c93733ffe26e4195d  results/configuration.csv
@@ -21,7 +24,7 @@ b2b0c989ed9795c06870e218cd836b1ef2f8e78c947731c155fd48c9cd60ad50  results/paired
 ee272ddcf5877061d5ddf94037c70e1feac677c4bdba3242deb32749bb8497e8  results/paired_panic_cf_vs_cv_min.csv
 c6b305abd912399a526907ff5aec768cee6fb7282ec18b845123934c62d23a30  results/prediction_margin_sensitivity.csv
 e19d804cb27d60620d0c6c58e0c9cbdb892c854cd1a8555c6d8e18907e556444  results/production_file_manifest.csv
-cbc0f1b8e61d8bd3653a249584aff5078176d5c00d61786cf6677017318b2bb4  results/repository_verification.csv
+6e6a6f6cf72ed1ae91ebe4ae9e93ec14b89e6b10a83471648c2fed0e4e065ced  results/relative_deviance_denominator_audit.csv
 d5536ddb4c62349cf80c70481d95280e332f88c68464e8bc1d38cec2f2e04f20  results/runtime_environment.txt
 04bb61d877f041b2f11fcebd5dc3e4d49871816a78598fc21bf2798b672720de  results/runtime_summary.csv
 214c03e3564cd2218b7b301b42227c2286c73bf9a7678dd208e6bdbffc6804cd  results/scenario_primary_estimands.csv

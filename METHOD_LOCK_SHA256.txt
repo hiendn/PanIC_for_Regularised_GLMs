@@ -102,6 +102,27 @@ reader-facing captions.  Internal identifiers and statistical calculations
 are unchanged, and the independent verifiers enforce these presentation
 requirements.
 
+Post-production presentation and verification amendment
+-------------------------------------------------------
+
+The 2026-09-20 release makes the manuscript self-contained with respect to
+tables.  Seven complete table floats are embedded in `manuscript/main.tex`;
+the files under `results/table_*.tex` are deterministic, checksum-controlled
+mirrors rather than LaTeX inputs.  A common renderer now generates all seven
+mirrors, and independent checks compare both the mirrors and the embedded
+blocks byte-for-byte.  This refactoring changes no fitted path, random stream,
+summary value, estimand, threshold, or decision.
+
+The same release makes an implicit domain requirement for the relative
+test-deviance contrast explicit: every paired CV-min denominator must be
+finite and strictly positive.  A violation is a hard failure; no observation
+is deleted and no denominator is floored or replaced.  The retained 7,000
+paired production rows satisfy this condition.  Their scenario-level ranges
+and empirical contrast moments are recorded in
+`relative_deviance_denominator_audit.csv` and independently reconstructed from
+the raw rows.  This is a verification amendment to the already fixed estimand,
+not a change to the statistical procedure or reported numerical results.
+
 Locked critical sources
 -----------------------
 
@@ -109,14 +130,23 @@ Locked critical sources
 9128cd0112cd3c679fef5d5601c22a4232293e2c38a9dae7e7caa6d2f3762c68  reference_implementation/path_functions.R
 5df27ca79d5da1e7440b6c7b23874bdbdf62772fd02680fe9822136be8ffe568  reference_implementation/revised_cf_functions.R
 d485eaff44af6ea7359e8deda02db456ea08c160d4c661695b66312bea316d96  Simulation_Config.R
+ad37f09ea27711215cce986e3d202a38171907532438b30d75c9a0c6b5987bd4  Auxiliary_Config.R
 073527683e2c1a6c143b71ea0253b1831cc870fba3e5da507bc600ebaf4775d7  PanIC_CF_Functions.R
+fb96556c3333eedc3c5fe0c6848cb159eedc07f654e76320e61abc749fdfb671  Auxiliary_Simulation_Functions.R
 3ab67344c6e89c24fcc04d47d2adc1439c3a685cb9048d87052709759564583f  Method_Lock_Verification.R
 2237446bbe7b962a1219e8fbc0cbd281592bbb34e013fadda2fedb8484febe4f  Implementation_Validation.R
 f40bc8a24679024fbc80b341939c1aa52176741be4ec38177683b04f5e32095c  Run_Confirmatory_Simulations.R
-eb26ad02e1ca8c9f295142483b2c259ea723ba7048b3a76cf3b4e2e206f5e349  Simulation_Results_Analysis.R
-a514cc10a5073d386cfeaff9a2f80ef317d8730305987dee97c3841f35e0b0a6  Results_Verification.R
-497a23c8d94facc237eb8fb124362c6c317a1175d47b184d4863a1e52729ac19  Grid_Sensitivity_Study.R
-56952132b30c1ca96d297afd3d7c56254447ae0cdb80464a3e0e5f7f4e6e9243  Grid_Results_Verification.R
+f6826c229fc66f74f1628b135a39a2b4bb862211573e275bbf303bb419908064  Simulation_Results_Analysis.R
+b484eff6b7b6906da99ffa6a17298ec6331f455fcbc86ae88af22df25e82317a  Results_Verification.R
 4254a8908dca3e1294a2edb7f82c1dc2c2bfcb01b1ae982ac671bccb3a392ba3  Simulation_Study.R
+b39cd705819370e361d5a27d9eef912afbafd635817d65b578cedcc3a8f9b194  Grid_Sensitivity_Study.R
+728fdd257d43522294d979aa4a86e2b1b4132db035306759791138d8ea4bb0da  Grid_Results_Verification.R
 787060f62b07b0b9d3b70c990fee1f9a5ddec464fe937e9ec36988aa25a23cec  Grid_Sensitivity_Pipeline.R
-2fdd5eefbf3b2ea8ddc81f0a859ba95a87451a6b33efc29dd0073a91df165fd2  Repository_Verification.R
+683b4daed1d1453cbbfd7dadc0e450e63f7cb306e1377b70d0c10309b403b467  Boundary_Subsampling_Study.R
+24c0383018e605ca5c6ec51b0055460d5c54215e242a3fac449f346571df43be  Solver_Validation.R
+96e8c30aa29c200fb87693af727e8721d2e3d79730f553327ae24cbe3f039607  Runtime_Benchmark.R
+44ba9c99814ba5c115b0bd84a1a87809cf09bc50f21818271e7302c0440ad05a  Render_Runtime_Figure.R
+268a30dd2489e5872bb046906aa1ae7d4ae6208f33672d0468afa51f726716e5  Manuscript_Table_Rendering.R
+eb0c410777a5bf1f4e7280ea8fd48603691d5771a3bc38fd3dc3ff2ab91dfc27  Render_Manuscript_Tables.R
+06c5d103f260b50610775e3e51d782679b2d86ca90c8dccd07dc4193b2ff2767  Manuscript_Table_Tools.R
+58be163cfb89eb0ed0eacad7a63c62f0a058f47a7182535f527d38d5786dfa9d  Repository_Verification.R

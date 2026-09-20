@@ -15,6 +15,8 @@ results_dir <- file.path(repository_dir, "results")
 source(file.path(repository_dir, "Method_Lock_Verification.R"))
 verify_method_lock(repository_dir)
 source(file.path(repository_dir, "Simulation_Config.R"))
+source(file.path(repository_dir, "Manuscript_Table_Rendering.R"))
+source(file.path(repository_dir, "Manuscript_Table_Tools.R"))
 
 checks <- list()
 record_check <- function(name, passed, detail) {
@@ -192,6 +194,89 @@ record_check(
           support_upper, prediction_upper)
 )
 
+denominator_audit <- read_result("relative_deviance_denominator_audit.csv")
+denominator_audit_columns <- c(
+  "scenario_id", "family", "n", "rho", "paired_replications",
+  "nonfinite_cv_min_test_deviances",
+  "nonpositive_cv_min_test_deviances",
+  "minimum_cv_min_test_deviance",
+  "maximum_cv_min_test_deviance",
+  "nonfinite_relative_contrasts",
+  "relative_contrast_mean",
+  "relative_contrast_variance",
+  "relative_contrast_second_moment",
+  "maximum_absolute_relative_contrast"
+)
+audit_schema_ok <- identical(names(denominator_audit), denominator_audit_columns)
+audit_rows_ok <- audit_schema_ok &&
+  nrow(denominator_audit) == nrow(SCENARIOS) &&
+  identical(denominator_audit$scenario_id, SCENARIOS$scenario_id) &&
+  identical(denominator_audit$family, SCENARIOS$family) &&
+  identical(as.integer(denominator_audit$n), as.integer(SCENARIOS$n)) &&
+  close_enough(denominator_audit$rho, SCENARIOS$rho) &&
+  all(denominator_audit$paired_replications == 1000L)
+audit_numeric_columns <- setdiff(
+  denominator_audit_columns, c("scenario_id", "family")
+)
+audit_finite_ok <- audit_schema_ok && all(vapply(
+  denominator_audit[audit_numeric_columns],
+  function(column) all(is.finite(column)),
+  logical(1)
+))
+audit_denominators_ok <- audit_finite_ok &&
+  all(denominator_audit$nonfinite_cv_min_test_deviances == 0L) &&
+  all(denominator_audit$nonpositive_cv_min_test_deviances == 0L) &&
+  all(denominator_audit$minimum_cv_min_test_deviance > 0) &&
+  all(
+    denominator_audit$maximum_cv_min_test_deviance >=
+      denominator_audit$minimum_cv_min_test_deviance
+  ) &&
+  all(denominator_audit$nonfinite_relative_contrasts == 0L)
+audit_moments_ok <- audit_finite_ok &&
+  all(denominator_audit$relative_contrast_variance >= 0) &&
+  close_enough(
+    denominator_audit$relative_contrast_second_moment,
+    denominator_audit$relative_contrast_mean^2 +
+      denominator_audit$relative_contrast_variance *
+      (denominator_audit$paired_replications - 1) /
+      denominator_audit$paired_replications
+  ) &&
+  all(
+    denominator_audit$maximum_absolute_relative_contrast + 5e-13 >=
+      abs(denominator_audit$relative_contrast_mean)
+  ) &&
+  close_enough(
+    denominator_audit$relative_contrast_mean,
+    scenario$relative_test_deviance_difference
+  ) &&
+  close_enough(
+    sqrt(
+      denominator_audit$relative_contrast_variance /
+        denominator_audit$paired_replications
+    ),
+    scenario$relative_test_deviance_difference_mcse
+  )
+record_check(
+  "relative-deviance denominator and moment audit",
+  audit_rows_ok && audit_denominators_ok && audit_moments_ok,
+  if (audit_finite_ok && nrow(denominator_audit)) {
+    paste0(
+      "minimum_CV_min_deviance=",
+      format(
+        min(denominator_audit$minimum_cv_min_test_deviance),
+        digits = 10L
+      ),
+      ";maximum_second_moment=",
+      format(
+        max(denominator_audit$relative_contrast_second_moment),
+        scientific = TRUE
+      )
+    )
+  } else {
+    "missing, malformed, or nonfinite audit values"
+  }
+)
+
 margins <- read_result("prediction_margin_sensitivity.csv")
 record_check(
   "prediction margin roles and decisions",
@@ -286,7 +371,7 @@ record_check(
 manifest <- read_result("production_file_manifest.csv")
 required_manifest_columns <- c("relative_path", "bytes", "sha256")
 record_check(
-  "full production file manifest is well formed",
+  "historical production-run file manifest is well formed",
   all(required_manifest_columns %in% names(manifest)) && nrow(manifest) >= 70L &&
     all(nchar(manifest$sha256) == 64L) &&
     any(grepl("_raw[.]rds$", manifest$relative_path)) &&
@@ -298,6 +383,70 @@ table_names <- c(
   "table_primary_support.tex", "table_primary_performance.tex",
   "table_confirmatory_decision.tex", "table_calibration.tex",
   "table_grid_sensitivity.tex", "table_boundary.tex", "table_subsampling.tex"
+)
+verify_table_mirrors <- function() {
+  temporary_dir <- tempfile(pattern = "panic-rendered-tables-")
+  dir.create(temporary_dir)
+  on.exit(unlink(temporary_dir, recursive = TRUE, force = TRUE), add = TRUE)
+  rendered <- render_all_manuscript_tables(results_dir)
+  write_all_manuscript_tables(rendered, temporary_dir)
+  matches <- vapply(table_names, function(name) {
+    expected_path <- file.path(results_dir, name)
+    rendered_path <- file.path(temporary_dir, name)
+    if (!file.exists(expected_path) || !file.exists(rendered_path)) {
+      return(FALSE)
+    }
+    expected_size <- file.info(expected_path)$size
+    rendered_size <- file.info(rendered_path)$size
+    identical(expected_size, rendered_size) &&
+      identical(
+        readBin(expected_path, what = "raw", n = expected_size),
+        readBin(rendered_path, what = "raw", n = rendered_size)
+      )
+  }, logical(1))
+  list(matches = matches, error = NULL)
+}
+table_mirror_result <- tryCatch(
+  verify_table_mirrors(),
+  error = function(error) {
+    list(
+      matches = setNames(rep(FALSE, length(table_names)), table_names),
+      error = conditionMessage(error)
+    )
+  }
+)
+record_check(
+  "all seven canonical table mirrors reproduce byte-for-byte",
+  all(table_mirror_result$matches),
+  if (is.null(table_mirror_result$error)) {
+    paste0(
+      "matched=", sum(table_mirror_result$matches), "/", length(table_names)
+    )
+  } else {
+    table_mirror_result$error
+  }
+)
+manuscript_path <- file.path(repository_dir, "manuscript", "main.tex")
+inline_table_result <- tryCatch(
+  verify_inline_tables(
+    manuscript_path, results_dir, stop_on_failure = FALSE
+  ),
+  error = function(error) error
+)
+inline_tables_ok <- !inherits(inline_table_result, "error") &&
+  all(inline_table_result$passed == 1L) &&
+  isTRUE(attr(inline_table_result, "no_external_table_references"))
+record_check(
+  "manuscript embeds all seven mirrors with no external table dependency",
+  inline_tables_ok,
+  if (inherits(inline_table_result, "error")) {
+    conditionMessage(inline_table_result)
+  } else {
+    paste0(
+      "matched=", sum(inline_table_result$passed), "/",
+      nrow(inline_table_result), ";external_references=0"
+    )
+  }
 )
 table_text <- paste(vapply(table_names, function(name) {
   paste(readLines(assert_file(name), warn = FALSE), collapse = "\n")

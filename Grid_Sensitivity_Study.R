@@ -17,6 +17,7 @@ candidate_dir <- dirname(script_path)
 source(file.path(candidate_dir, "Method_Lock_Verification.R"))
 verify_method_lock(candidate_dir)
 source(file.path(candidate_dir, "Simulation_Config.R"))
+source(file.path(candidate_dir, "Manuscript_Table_Rendering.R"))
 
 PRODUCTION_CONFIRMATORY_MASTER_SEED <- CONFIG$master_seed
 PRODUCTION_SENSITIVITY_MASTER_SEED <- CONFIG$grid_sensitivity_master_seed
@@ -60,8 +61,6 @@ if (!smoke_mode && n_rep != CONFIG$grid_sensitivity_replications) {
   )
 }
 dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
-generated_dir <- file.path(results_dir, "manuscript_generated")
-dir.create(generated_dir, recursive = TRUE, showWarnings = FALSE)
 
 grid_sizes <- CONFIG$grid_sensitivity_points
 scenario <- data.frame(
@@ -307,48 +306,6 @@ for (m in c(61L, 241L)) {
   }
 }
 
-cell <- function(mean, se, digits = 3L) {
-  sprintf(paste0("%.", digits, "f (%.", digits, "f)"), mean, se)
-}
-reader_method <- function(method) {
-  ifelse(method == "BIC-active (exploratory)", "BIC-like", method)
-}
-table_lines <- c(
-  "\\begin{table}[H]", "\\centering",
-  paste0(
-    "\\caption{Radius-grid sensitivity in the independent Gaussian ",
-    "setting with $n=1000$ and common random numbers across ",
-    "$N=", n_rep, "$ replications. Every grid spans $[0,20]$. Entries ",
-    "are means with Monte Carlo standard errors in parentheses.}"
-  ),
-  "\\label{Table: second confirmation grid sensitivity}",
-  "\\begin{adjustbox}{width=\\textwidth}", "\\scriptsize",
-  "\\begin{tabular}{rrlrrrr}", "\\hline",
-  paste0(
-    "$m$ & Spacing & Method & Total support error & Exact & Test deviance ",
-    "& Selected radius \\\\"
-  ),
-  "\\hline"
-)
-for (i in seq_len(nrow(grid_summary))) {
-  row <- grid_summary[i, ]
-  table_lines <- c(table_lines, paste0(
-    row$radius_points, " & ", sprintf("%.3f", row$grid_spacing), " & ",
-    reader_method(row$method), " & ",
-    cell(row$wrong_mean, row$wrong_mcse, 2), " & ",
-    cell(row$exact_mean, row$exact_mcse, 3), " & ",
-    cell(row$test_deviance_mean, row$test_deviance_mcse, 3), " & ",
-    cell(row$selected_grid_radius_mean,
-         row$selected_grid_radius_mcse, 3), " \\\\"
-  ))
-}
-table_lines <- c(
-  table_lines, "\\hline", "\\end{tabular}",
-  "\\end{adjustbox}", "\\end{table}"
-)
-writeLines(table_lines,
-           file.path(generated_dir, "table_grid_sensitivity.tex"))
-
 grid_configuration <- data.frame(
   item = c(
     "seed_role", "sensitivity_master_seed", "confirmatory_master_seed",
@@ -387,4 +344,15 @@ saveRDS(
   ),
   file.path(results_dir, "grid_locked_configuration.rds"), compress = "xz"
 )
+## Re-read the retained summary before presentation rendering so the CSV is
+## the single deterministic formatting contract at decimal-rounding ties.
+render_grid_summary <- read.csv(
+  file.path(results_dir, "grid_sensitivity_summary.csv"),
+  stringsAsFactors = FALSE, check.names = FALSE
+)
+grid_tables <- setNames(
+  list(render_grid_sensitivity_table(render_grid_summary)),
+  "table_grid_sensitivity.tex"
+)
+write_manuscript_table_subset(grid_tables, results_dir)
 cat("Second-confirmation common-random-number grid study completed.\n")
