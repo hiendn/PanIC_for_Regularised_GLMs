@@ -10,10 +10,12 @@ script_path <- if (length(script_arg)) {
 candidate_dir <- dirname(script_path)
 
 run <- function(script, extra = character()) {
+  previous_dir <- setwd(candidate_dir)
+  on.exit(setwd(previous_dir), add = TRUE)
   status <- system2(
     file.path(R.home("bin"), "Rscript"),
     c(
-      shQuote(file.path(candidate_dir, script)),
+      shQuote(script),
       vapply(extra, shQuote, character(1))
     )
   )
