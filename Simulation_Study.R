@@ -12,7 +12,10 @@ candidate_dir <- dirname(script_path)
 run <- function(script, extra = character()) {
   status <- system2(
     file.path(R.home("bin"), "Rscript"),
-    c(file.path(candidate_dir, script), extra)
+    c(
+      shQuote(file.path(candidate_dir, script)),
+      vapply(extra, shQuote, character(1))
+    )
   )
   if (status != 0L) stop(script, " failed with status ", status)
 }

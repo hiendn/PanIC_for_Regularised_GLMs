@@ -15,7 +15,8 @@ verify_method_lock <- function(candidate_dir) {
   )
   actual <- vapply(paths, function(path) {
     output <- system2(
-      "shasum", c("-a", "256", path), stdout = TRUE, stderr = TRUE
+      "shasum", c("-a", "256", shQuote(path)),
+      stdout = TRUE, stderr = TRUE
     )
     status <- attr(output, "status")
     if (!is.null(status) && status != 0L) {

@@ -37,9 +37,11 @@ read_result <- function(name) {
 }
 sha256_file <- function(path) {
   if (nzchar(Sys.which("shasum"))) {
-    output <- system2("shasum", c("-a", "256", path), stdout = TRUE)
+    output <- system2(
+      "shasum", c("-a", "256", shQuote(path)), stdout = TRUE
+    )
   } else if (nzchar(Sys.which("sha256sum"))) {
-    output <- system2("sha256sum", path, stdout = TRUE)
+    output <- system2("sha256sum", shQuote(path), stdout = TRUE)
   } else {
     stop("Neither shasum nor sha256sum is available", call. = FALSE)
   }

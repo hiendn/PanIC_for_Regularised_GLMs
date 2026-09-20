@@ -232,8 +232,10 @@ if (length(diagnostic_files)) {
 writeLines(capture.output(sessionInfo()),
            file.path(results_dir, "sessionInfo.txt"))
 method_lock_hash <- system2(
-  "shasum", c("-a", "256", file.path(candidate_dir,
-                                     "METHOD_LOCK_SHA256.txt")),
+  "shasum", c(
+    "-a", "256",
+    shQuote(file.path(candidate_dir, "METHOD_LOCK_SHA256.txt"))
+  ),
   stdout = TRUE
 )
 writeLines(
