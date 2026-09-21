@@ -249,4 +249,4 @@ assert(!grepl(
   ignore.case = TRUE
 ), "The grid table exposes internal process wording")
 
-cat("PASS: confirmatory grid-sensitivity results are verified.\n")
+cat("PASS: grid-sensitivity results are verified.\n")

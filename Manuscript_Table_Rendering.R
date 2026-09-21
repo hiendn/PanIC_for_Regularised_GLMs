@@ -1,4 +1,4 @@
-## Deterministic renderers for the seven manuscript table fragments.
+## Deterministic renderers for the six manuscript table fragments.
 ##
 ## Each render_* function is pure: it accepts already-read result objects and
 ## returns the complete LaTeX fragment as a character vector.  The thin I/O
@@ -8,7 +8,6 @@
 PANIC_RENDERED_TABLE_FILES <- c(
   "table_primary_support.tex",
   "table_primary_performance.tex",
-  "table_confirmatory_decision.tex",
   "table_calibration.tex",
   "table_grid_sensitivity.tex",
   "table_boundary.tex",
@@ -17,11 +16,14 @@ PANIC_RENDERED_TABLE_FILES <- c(
 
 PANIC_SCENARIO_LABELS <- c(
   linear_iid_n500 = "Gaussian independent, $n=500$",
-  linear_iid_n2000 = "Gaussian independent, $n=2000$",
+  linear_iid_n1000 = "Gaussian independent, $n=1000$",
   logistic_iid_n500 = "Logistic independent, $n=500$",
-  logistic_iid_n2000 = "Logistic independent, $n=2000$",
+  logistic_iid_n1000 = "Logistic independent, $n=1000$",
+  linear_ar1_n500 = "Gaussian AR(1), $n=500$",
   linear_ar1_n1000 = "Gaussian AR(1), $n=1000$",
+  logistic_ar1_n500 = "Logistic AR(1), $n=500$",
   logistic_ar1_n1000 = "Logistic AR(1), $n=1000$",
+  poisson_iid_n500 = "Poisson independent, $n=500$",
   poisson_iid_n1000 = "Poisson independent, $n=1000$"
 )
 
@@ -108,8 +110,11 @@ panic_order_primary_rows <- function(summary) {
   ))
   if (nrow(assessed) != length(expected_keys) || anyDuplicated(keys) ||
       !setequal(keys, expected_keys)) {
-    stop("simulation_summary does not contain the expected 7-by-3 assessed rows",
-         call. = FALSE)
+    stop(
+      "simulation_summary does not contain the expected ",
+      length(PANIC_SCENARIO_LABELS), "-by-", length(PANIC_METHOD_ORDER),
+      " assessed rows", call. = FALSE
+    )
   }
   ordered <- assessed[order(scenario_rank, method_rank), , drop = FALSE]
   rownames(ordered) <- NULL
@@ -239,66 +244,6 @@ render_primary_performance_table <- function(simulation_summary,
     "\\end{table}")
 }
 
-render_confirmatory_decision_table <- function(confirmatory_decision) {
-  required <- c(
-    "support_estimate", "support_mcse", "support_upper_one_sided_95",
-    "support_superiority_threshold", "prediction_estimate",
-    "prediction_mcse", "prediction_upper_one_sided_95",
-    "prediction_noninferiority_margin"
-  )
-  panic_require_columns(confirmatory_decision, required,
-                        "confirmatory_decision")
-  if (nrow(confirmatory_decision) != 1L) {
-    stop("confirmatory_decision must contain exactly one row", call. = FALSE)
-  }
-  row <- confirmatory_decision[1L, , drop = FALSE]
-  if (row$support_superiority_threshold != 0 ||
-      row$prediction_noninferiority_margin != 0.001) {
-    stop("The current decision-table criteria have changed", call. = FALSE)
-  }
-
-  c(
-    "\\begin{table}[H]",
-    "\\centering",
-    paste0(
-      "\\caption{Joint comparison of PanIC-CF with ",
-      "CV. The two endpoints are equal-weight means over the seven ",
-      "settings; the relative-deviance endpoint is dimensionless. The joint ",
-      "conclusion requires both one-sided criteria to hold.}"
-    ),
-    "\\label{Table: confirmatory decision}",
-    "\\begin{adjustbox}{width=\\textwidth}",
-    "\\begin{tabular}{lrrrr}",
-    "\\hline",
-    paste0(
-      "Endpoint & Estimate & MCSE & One-sided 95\\% upper bound & Criterion ",
-      "\\\\"
-    ),
-    "\\hline",
-    sprintf(
-      paste0(
-        "Total support error, $\\Delta_{\\rm S}$ & %.5f & %.5f & %.5f & ",
-        "$<0$ \\\\"
-      ),
-      row$support_estimate, row$support_mcse,
-      row$support_upper_one_sided_95
-    ),
-    sprintf(
-      paste0(
-        "Relative test deviance, $\\Delta_{\\rm D}$ & %.6f & %.6f & %.6f & ",
-        "$<%.3f$ \\\\"
-      ),
-      row$prediction_estimate, row$prediction_mcse,
-      row$prediction_upper_one_sided_95,
-      row$prediction_noninferiority_margin
-    ),
-    "\\hline",
-    "\\end{tabular}",
-    "\\end{adjustbox}",
-    "\\end{table}"
-  )
-}
-
 render_calibration_table <- function(calibration_target_summary,
                                      diagnostic_summary) {
   target_required <- c(
@@ -326,8 +271,10 @@ render_calibration_table <- function(calibration_target_summary,
   rank <- match(rows$scenario_id, names(PANIC_SCENARIO_LABELS))
   if (nrow(rows) != length(PANIC_SCENARIO_LABELS) || anyNA(rank) ||
       !setequal(rows$scenario_id, names(PANIC_SCENARIO_LABELS))) {
-    stop("Calibration summaries do not contain the expected seven scenarios",
-         call. = FALSE)
+    stop(
+      "Calibration summaries do not contain the expected ",
+      length(PANIC_SCENARIO_LABELS), " scenarios", call. = FALSE
+    )
   }
   rows <- rows[order(rank), , drop = FALSE]
   replications <- panic_single_value(
@@ -451,6 +398,12 @@ render_boundary_table <- function(boundary_summary) {
   )
   panic_require_columns(boundary_summary, required, "boundary_summary")
   rows <- boundary_summary[order(boundary_summary$n), , drop = FALSE]
+  if (!identical(as.integer(rows$n), c(500L, 1000L))) {
+    stop(
+      "boundary_summary must contain the n=500 and n=1000 illustrations",
+      call. = FALSE
+    )
+  }
   replications <- panic_single_value(
     rows$replications, "boundary replications"
   )
@@ -521,6 +474,17 @@ render_subsampling_table <- function(subsampling_summary, boundary_summary) {
   )
   rows <- subsampling_summary[order(subsampling_summary$b), , drop = FALSE]
   n <- panic_single_value(rows$n, "subsampling full-sample size")
+  if (as.integer(n) != 1000L ||
+      !identical(as.integer(rows$b), c(50L, 100L, 200L)) ||
+      !isTRUE(all.equal(
+        as.numeric(rows$b_over_n), c(0.05, 0.10, 0.20),
+        tolerance = 1e-12, check.attributes = FALSE
+      ))) {
+    stop(
+      "subsampling_summary must use n=1000 and b in {50,100,200}",
+      call. = FALSE
+    )
+  }
   replications <- panic_single_value(
     rows$random_subsamples, "random subsamples"
   )
@@ -608,7 +572,6 @@ panic_read_result_csv <- function(results_dir, filename) {
 render_all_manuscript_tables <- function(results_dir) {
   configuration <- panic_read_result_csv(results_dir, "configuration.csv")
   simulation <- panic_read_result_csv(results_dir, "simulation_summary.csv")
-  decision <- panic_read_result_csv(results_dir, "confirmatory_decision.csv")
   targets <- panic_read_result_csv(
     results_dir, "calibration_target_summary.csv"
   )
@@ -620,7 +583,6 @@ render_all_manuscript_tables <- function(results_dir) {
   setNames(list(
     render_primary_support_table(simulation, configuration),
     render_primary_performance_table(simulation, configuration),
-    render_confirmatory_decision_table(decision),
     render_calibration_table(targets, diagnostics),
     render_grid_sensitivity_table(grid),
     render_boundary_table(boundary),

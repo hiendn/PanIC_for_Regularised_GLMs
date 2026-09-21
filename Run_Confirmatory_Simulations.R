@@ -62,7 +62,10 @@ if (scenario_filter == "all") {
   if (anyNA(scenario_indices)) stop("Unknown scenario id in --scenarios")
 }
 if (!smoke_mode && scenario_filter != "all") {
-  stop("The locked production run must execute all seven scenarios together")
+  stop(
+    "The locked production run must execute all ", nrow(SCENARIOS),
+    " scenarios together"
+  )
 }
 
 configuration <- data.frame(
@@ -96,10 +99,14 @@ configuration <- data.frame(
     "sqrt(log(log(n_validation + exp(exp(1)))))", CONFIG$cv_folds,
     "minimum mean five-fold validation loss on radius grid",
     "beta_hat != 0 (literal fitted nonzero)",
-    "equal-weight seven-scenario mean paired (FP+FN)_PanIC-(FP+FN)_CV",
+    paste0(
+      "equal-weight ", nrow(SCENARIOS),
+      "-scenario mean paired (FP+FN)_PanIC-(FP+FN)_CV"
+    ),
     "one-sided 95% upper Monte Carlo bound < 0",
     paste0(
-      "equal-weight seven-scenario mean paired relative deviance change ",
+      "equal-weight ", nrow(SCENARIOS),
+      "-scenario mean paired relative deviance change ",
       "(D_PanIC-D_CV)/D_CV"
     ),
     CONFIG$prediction_noninferiority_margin,

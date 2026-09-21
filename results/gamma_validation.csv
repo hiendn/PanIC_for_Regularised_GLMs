@@ -1,2 +1,2 @@
 "fixed_shape_used_for_generation","glm_converged","glm_rank","glmnet_jerr","warning_count","warning_text","smallest_lambda","coefficient_rmse_to_unregularised_glm","max_abs_coefficient_difference"
-2,TRUE,21,0,1,"glmnet.fit: algorithm did not converge",0.00249463088825124,0.00284790627785655,0.00443105485791833
+2,TRUE,21,0,2,"glmnet.fit: algorithm did not converge",0.00255183506174535,0.00237415673867751,0.00345504149676346

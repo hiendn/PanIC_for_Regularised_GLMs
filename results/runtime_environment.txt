@@ -1,4 +1,4 @@
-Timing date: 2026-09-21 00:17:23 AEST
+Timing date: 2026-09-21 13:34:20 AEST
 Operating system: Darwin 25.6.0
 Machine: arm64
 Model Name: MacBook Pro
@@ -7,6 +7,7 @@ Chip: Apple M1 Max
 Total Number of Cores: 10 (8 Performance and 2 Efficiency)
 Memory: 32 GB
 Timing worker count: 1
+Runtime master seed: 2096092101
 Warm-up runs per family and method: 2
 Timed replications per family and method: 20
 Elapsed time excludes data generation and independent test evaluation.

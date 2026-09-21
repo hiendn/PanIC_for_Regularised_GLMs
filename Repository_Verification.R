@@ -72,23 +72,70 @@ checksum_lines <- readLines(checksum_path, warn = FALSE)
 checksum_entries <- grep("^[0-9a-f]{64}  ", checksum_lines, value = TRUE)
 checksum_expected <- substr(checksum_entries, 1L, 64L)
 checksum_relative <- substring(checksum_entries, 67L)
+expected_checksum_basenames <- c(
+  "production_file_manifest.csv",
+  "implementation_validation.csv",
+  "configuration.csv",
+  "scenario_registry.csv",
+  "locked_configuration.rds",
+  "environment.txt",
+  "sessionInfo.txt",
+  "seed_ledger.csv",
+  "simulation_summary.csv",
+  "paired_method_contrasts.csv",
+  "paired_panic_cf_vs_cv.csv",
+  "scenario_primary_estimands.csv",
+  "confirmatory_decision.csv",
+  "prediction_margin_sensitivity.csv",
+  "relative_deviance_denominator_audit.csv",
+  "calibration_target_summary.csv",
+  "diagnostic_summary.csv",
+  "grid_sensitivity_configuration.csv",
+  "grid_locked_configuration.rds",
+  "grid_sensitivity_summary.csv",
+  "grid_sensitivity_paired_contrasts.csv",
+  "grid_sensitivity_method_contrasts.csv",
+  "runtime_summary.csv",
+  "runtime_environment.txt",
+  "boundary_summary.csv",
+  "subsampling_summary.csv",
+  "solver_validation.csv",
+  "gamma_validation.csv",
+  PANIC_RENDERED_TABLE_FILES,
+  "figure_runtime.pdf",
+  "figure_boundary_subsampling.pdf"
+)
+expected_checksum_relative <- file.path(
+  "results", expected_checksum_basenames
+)
+checksum_inventory_ok <-
+  !anyDuplicated(checksum_relative) &&
+  identical(sort(checksum_relative), sort(expected_checksum_relative))
 checksum_files <- file.path(repository_dir, checksum_relative)
-checksum_present <- length(checksum_entries) > 0L && all(file.exists(checksum_files))
+checksum_present <- checksum_inventory_ok && all(file.exists(checksum_files))
 checksum_actual <- if (checksum_present) {
   vapply(checksum_files, sha256_file, character(1))
 } else {
   rep(NA_character_, length(checksum_expected))
 }
 record_check(
-  "compact result checksum manifest",
+  "compact result checksum inventory and digests",
   checksum_present && identical(unname(checksum_actual), checksum_expected),
-  paste0("entries=", length(checksum_entries))
+  paste0(
+    "entries=", length(checksum_entries),
+    ";missing=", paste(
+      setdiff(expected_checksum_relative, checksum_relative), collapse = ","
+    ),
+    ";extra=", paste(
+      setdiff(checksum_relative, expected_checksum_relative), collapse = ","
+    )
+  )
 )
 result_file_names <- list.files(results_dir)
-obsolete_result_files <- grep(
+obsolete_result_files <- unique(c(grep(
   "cv[_-]?min|cv[_-]?1se|loglog|panic[^/]*original|bic[_-]?active",
   result_file_names, value = TRUE, ignore.case = TRUE
-)
+), intersect(result_file_names, "table_confirmatory_decision.tex")))
 record_check(
   "obsolete compact-result filenames are absent",
   !length(obsolete_result_files),
@@ -113,9 +160,9 @@ config_value <- function(item) {
   value
 }
 record_check(
-  "production configuration and decision constants",
-  as.integer(config_value("master_seed")) == 2136092001L &&
-    as.integer(config_value("production_master_seed")) == 2136092001L &&
+  "production configuration and diagnostic thresholds",
+  as.integer(config_value("master_seed")) == 2146092101L &&
+    as.integer(config_value("production_master_seed")) == 2146092101L &&
     as.integer(config_value("replications_requested")) == 1000L &&
     as.integer(config_value("independent_test_size")) == 2000L &&
     as.numeric(config_value("prediction_noninferiority_margin")) == 0.001 &&
@@ -130,8 +177,8 @@ record_check(
 
 registry <- read_result("scenario_registry.csv")
 record_check(
-  "seven locked scenarios are present",
-  nrow(registry) == 7L &&
+  "ten simulation scenarios are present",
+  nrow(registry) == nrow(SCENARIOS) &&
     identical(registry$scenario_id, SCENARIOS$scenario_id) &&
     identical(registry$family, SCENARIOS$family) &&
     identical(as.integer(registry$n), as.integer(SCENARIOS$n)) &&
@@ -145,7 +192,8 @@ seed_columns <- c(
   paste0("calibration_split_seed_", seq_len(CONFIG$calibration_half_splits))
 )
 seed_schema_ok <- all(seed_columns %in% names(seed_ledger))
-seed_values_ok <- seed_schema_ok && nrow(seed_ledger) == 7000L
+seed_values_ok <- seed_schema_ok &&
+  nrow(seed_ledger) == nrow(SCENARIOS) * CONFIG$n_rep
 if (seed_values_ok) {
   for (i in seq_len(nrow(seed_ledger))) {
     scenario_index <- match(seed_ledger$scenario_id[i], SCENARIOS$scenario_id)
@@ -174,8 +222,9 @@ method_sets_ok <- all(vapply(split(summary, summary$scenario_id), function(dat) 
 }, logical(1)))
 record_check(
   "primary summary is complete",
-  nrow(summary) == 21L && method_sets_ok &&
-    all(summary$attempted_replications == 1000L) &&
+  nrow(summary) == length(assessed_methods) * nrow(SCENARIOS) &&
+    method_sets_ok &&
+    all(summary$attempted_replications == CONFIG$n_rep) &&
     all(summary$failed_replications == 0L) &&
     all(summary$method %in% assessed_methods) &&
     !contains_obsolete_method_label(summary),
@@ -194,13 +243,14 @@ paired_sets_ok <- all(vapply(split(paired, paired$scenario_id), function(dat) {
 }, logical(1)))
 record_check(
   "compact paired summaries use the assessed methods",
-  nrow(paired) == 21L && paired_sets_ok &&
-    all(paired$paired_replications == 1000L) &&
-    nrow(primary_pair) == 7L &&
+  nrow(paired) == length(expected_pair_keys) * nrow(SCENARIOS) &&
+    paired_sets_ok &&
+    all(paired$paired_replications == CONFIG$n_rep) &&
+    nrow(primary_pair) == nrow(SCENARIOS) &&
     identical(primary_pair$scenario_id, SCENARIOS$scenario_id) &&
     all(primary_pair$lhs_method == "PanIC-CF") &&
     all(primary_pair$rhs_method == "CV") &&
-    all(primary_pair$paired_replications == 1000L) &&
+    all(primary_pair$paired_replications == CONFIG$n_rep) &&
     !contains_obsolete_method_label(paired) &&
     !contains_obsolete_method_label(primary_pair),
   paste0("all_pairs=", nrow(paired), ";primary_pairs=", nrow(primary_pair))
@@ -217,27 +267,33 @@ prediction_mcse <- sqrt(sum(
   scenario$relative_test_deviance_difference_mcse^2
 )) / nrow(scenario)
 prediction_upper <- prediction_estimate + z * prediction_mcse
-decision_values_ok <- nrow(scenario) == 7L && nrow(decision) == 1L &&
-  all(scenario$paired_replications == 1000L) &&
+expected_complete_pairing <- all(
+  scenario$paired_replications == CONFIG$n_rep
+)
+expected_support_pass <- is.finite(support_upper) && support_upper < 0
+expected_prediction_pass <- is.finite(prediction_upper) &&
+  prediction_upper < CONFIG$prediction_noninferiority_margin
+expected_joint_flag <- expected_complete_pairing && expected_support_pass &&
+  expected_prediction_pass
+decision_values_ok <-
+  nrow(scenario) == nrow(SCENARIOS) && nrow(decision) == 1L &&
+  all(scenario$paired_replications == CONFIG$n_rep) &&
+  decision$scenarios == nrow(SCENARIOS) &&
+  decision$replications_per_scenario == CONFIG$n_rep &&
   close_enough(decision$support_estimate, support_estimate) &&
   close_enough(decision$support_mcse, support_mcse) &&
   close_enough(decision$support_upper_one_sided_95, support_upper) &&
   close_enough(decision$prediction_estimate, prediction_estimate) &&
   close_enough(decision$prediction_mcse, prediction_mcse) &&
-  close_enough(decision$prediction_upper_one_sided_95, prediction_upper)
+  close_enough(decision$prediction_upper_one_sided_95, prediction_upper) &&
+  decision$complete_pairing == as.integer(expected_complete_pairing) &&
+  decision$support_superiority_pass == as.integer(expected_support_pass) &&
+  decision$prediction_noninferiority_pass ==
+    as.integer(expected_prediction_pass) &&
+  decision$joint_claim_pass == as.integer(expected_joint_flag)
 record_check(
-  "confirmatory endpoints reconstruct from scenario rows",
+  "endpoint summaries and flags reconstruct from scenario rows",
   decision_values_ok,
-  sprintf("support=%.9f;relative_deviance=%.9f",
-          support_estimate, prediction_estimate)
-)
-record_check(
-  "locked joint superiority/noninferiority decision passes",
-  decision_values_ok && support_upper < 0 && prediction_upper < 0.001 &&
-    decision$complete_pairing == 1L &&
-    decision$support_superiority_pass == 1L &&
-    decision$prediction_noninferiority_pass == 1L &&
-    decision$joint_claim_pass == 1L,
   sprintf("support_upper=%.9f;prediction_upper=%.9f",
           support_upper, prediction_upper)
 )
@@ -262,7 +318,7 @@ audit_rows_ok <- audit_schema_ok &&
   identical(denominator_audit$family, SCENARIOS$family) &&
   identical(as.integer(denominator_audit$n), as.integer(SCENARIOS$n)) &&
   close_enough(denominator_audit$rho, SCENARIOS$rho) &&
-  all(denominator_audit$paired_replications == 1000L)
+  all(denominator_audit$paired_replications == CONFIG$n_rep)
 audit_numeric_columns <- setdiff(
   denominator_audit_columns, c("scenario_id", "family")
 )
@@ -326,15 +382,16 @@ record_check(
 )
 
 margins <- read_result("prediction_margin_sensitivity.csv")
+expected_margin_flags <- as.integer(
+  prediction_upper < as.numeric(margins$margin)
+)
 record_check(
-  "prediction margin roles and decisions",
+  "prediction margin roles and diagnostic flags",
   identical(as.numeric(margins$margin), c(0.001, 0.0005, 0.0025, 0.005)) &&
     identical(margins$role, c("primary", rep("sensitivity", 3L))) &&
-    all(margins$noninferiority_pass == 1L) &&
+    identical(as.integer(margins$noninferiority_pass), expected_margin_flags) &&
     all(abs(margins$upper_one_sided_95 - prediction_upper) < 5e-13),
-  paste0("smallest_passing_margin=", min(
-    margins$margin[margins$noninferiority_pass == 1L]
-  ))
+  paste0("flags=", paste(expected_margin_flags, collapse = ","))
 )
 
 diagnostics <- read_result("diagnostic_summary.csv")
@@ -355,9 +412,10 @@ diagnostic_zero <- diagnostic_schema_ok && all(vapply(
   }, logical(1)))
 record_check(
   "production numerical diagnostics",
-  diagnostic_schema_ok && nrow(diagnostics) == 7L &&
+  diagnostic_schema_ok && nrow(diagnostics) == nrow(SCENARIOS) &&
     identical(diagnostics$scenario_id, SCENARIOS$scenario_id) &&
-    all(diagnostics$attempted_replications == 1000L) && diagnostic_zero &&
+    all(diagnostics$attempted_replications == CONFIG$n_rep) &&
+    diagnostic_zero &&
     sum(diagnostics$projections) == 0L &&
     max(diagnostics$maximum_radius_interpolation_error) <
       CONFIG$interpolation_radius_tolerance,
@@ -379,9 +437,9 @@ record_check(
 calibration <- read_result("calibration_target_summary.csv")
 record_check(
   "calibration summary is complete",
-  nrow(calibration) == 7L &&
+  nrow(calibration) == nrow(SCENARIOS) &&
     identical(calibration$scenario_id, SCENARIOS$scenario_id) &&
-    all(calibration$complete_replications == 1000L),
+    all(calibration$complete_replications == CONFIG$n_rep),
   paste0("rows=", nrow(calibration))
 )
 
@@ -427,30 +485,131 @@ panic_grid_contrasts <- grid_contrasts[
   grid_contrasts$lhs_method == "PanIC-CF" &
     grid_contrasts$rhs_method == "CV",
 ]
+grid_pair_keys <- paste(
+  grid_pairs$method, grid_pairs$lower_radius_points,
+  grid_pairs$upper_radius_points, sep = "\r"
+)
+grid_point_pairs <- combn(
+  sort(CONFIG$grid_sensitivity_points), 2L, simplify = FALSE
+)
+expected_grid_pair_keys <- unlist(lapply(assessed_methods, function(method) {
+  vapply(grid_point_pairs, function(points) {
+    paste(method, points[[1L]], points[[2L]], sep = "\r")
+  }, character(1))
+}), use.names = FALSE)
+grid_method_keys <- paste(
+  grid_contrasts$radius_points, grid_contrasts$lhs_method,
+  grid_contrasts$rhs_method, sep = "\r"
+)
+expected_grid_method_keys <- unlist(lapply(
+  sort(CONFIG$grid_sensitivity_points), function(radius_points) {
+    vapply(strsplit(expected_pair_keys, "\r", fixed = TRUE), function(pair) {
+      paste(radius_points, pair[[1L]], pair[[2L]], sep = "\r")
+    }, character(1))
+  }
+), use.names = FALSE)
+grid_pairs_finite <- all(vapply(
+  grid_pairs[vapply(grid_pairs, is.numeric, logical(1))],
+  function(column) all(is.finite(column)), logical(1)
+))
+grid_methods_finite <- all(vapply(
+  grid_contrasts[vapply(grid_contrasts, is.numeric, logical(1))],
+  function(column) all(is.finite(column)), logical(1)
+))
 record_check(
-  "compact grid contrasts use the assessed methods",
-  nrow(grid_pairs) == 9L &&
-    setequal(unique(grid_pairs$method), assessed_methods) &&
-    all(grid_pairs$paired_replications == 500L) &&
-    nrow(grid_contrasts) == 9L &&
-    nrow(panic_grid_contrasts) == 3L &&
-    all(panic_grid_contrasts$paired_replications == 500L) &&
-    all(panic_grid_contrasts$wrong_difference < 0) &&
+  "compact grid contrasts are complete and finite",
+  nrow(grid_pairs) == length(expected_grid_pair_keys) &&
+    !anyDuplicated(grid_pair_keys) &&
+    setequal(grid_pair_keys, expected_grid_pair_keys) &&
+    all(
+      grid_pairs$paired_replications ==
+        CONFIG$grid_sensitivity_replications
+    ) &&
+    nrow(grid_contrasts) == length(expected_grid_method_keys) &&
+    !anyDuplicated(grid_method_keys) &&
+    setequal(grid_method_keys, expected_grid_method_keys) &&
+    nrow(panic_grid_contrasts) == length(CONFIG$grid_sensitivity_points) &&
+    all(
+      panic_grid_contrasts$paired_replications ==
+        CONFIG$grid_sensitivity_replications
+    ) &&
+    grid_pairs_finite && grid_methods_finite &&
     !contains_obsolete_method_label(grid_pairs) &&
     !contains_obsolete_method_label(grid_contrasts),
-  paste(sprintf("m=%d:%.3f", panic_grid_contrasts$radius_points,
-                panic_grid_contrasts$wrong_difference), collapse = ";")
+  paste0(
+    "grid_pairs=", length(unique(grid_pair_keys)), "/",
+    length(expected_grid_pair_keys), ";method_contrasts=",
+    length(unique(grid_method_keys)), "/",
+    length(expected_grid_method_keys), ";finite=",
+    grid_pairs_finite && grid_methods_finite
+  )
+)
+
+boundary <- read_result("boundary_summary.csv")
+subsampling <- read_result("subsampling_summary.csv")
+record_check(
+  "boundary and subsampling sample sizes match the revised design",
+  identical(sort(as.integer(boundary$n)), c(500L, 1000L)) &&
+    all(as.integer(subsampling$n) == 1000L) &&
+    identical(sort(as.integer(subsampling$b)), c(50L, 100L, 200L)) &&
+    close_enough(
+      subsampling$b_over_n[order(subsampling$b)], c(0.05, 0.10, 0.20)
+    ),
+  paste0(
+    "boundary_n=", paste(sort(boundary$n), collapse = ","),
+    ";subsampling_n=", paste(unique(subsampling$n), collapse = ","),
+    ";b=", paste(sort(subsampling$b), collapse = ",")
+  )
 )
 
 manifest <- read_result("production_file_manifest.csv")
 required_manifest_columns <- c("relative_path", "bytes", "sha256")
+manifest_paths <- as.character(manifest$relative_path)
+manifest_basenames <- basename(manifest_paths)
+scenario_artifact_suffixes <- c(
+  "_primary.csv", "_diagnostics.csv", "_calibration_rows.csv",
+  "_raw.rds", "_runtime.txt"
+)
+expected_scenario_artifacts <- as.vector(outer(
+  SCENARIOS$scenario_id, scenario_artifact_suffixes, paste0
+))
+scenario_artifact_pattern <- paste0(
+  "(", paste(
+    gsub("[.]", "[.]", scenario_artifact_suffixes), collapse = "|"
+  ), ")$"
+)
+observed_scenario_artifacts <- manifest_basenames[
+  grepl(scenario_artifact_pattern, manifest_basenames) &
+    !grepl("^grid_sensitivity_", manifest_basenames)
+]
+scenario_manifest_ok <-
+  !anyDuplicated(observed_scenario_artifacts) &&
+  identical(
+    sort(observed_scenario_artifacts), sort(expected_scenario_artifacts)
+  )
+forbidden_manifest_entries <- manifest_basenames[
+  grepl("n2000", manifest_basenames, fixed = TRUE) |
+    manifest_basenames == "table_confirmatory_decision.tex"
+]
 record_check(
-  "historical production-run file manifest is well formed",
-  all(required_manifest_columns %in% names(manifest)) && nrow(manifest) >= 70L &&
-    all(nchar(manifest$sha256) == 64L) &&
-    any(grepl("_raw[.]rds$", manifest$relative_path)) &&
-    any(grepl("_calibration_rows[.]csv$", manifest$relative_path)),
-  paste0("entries=", nrow(manifest))
+  "production-run manifest has exactly the ten scenario artifact families",
+  identical(names(manifest), required_manifest_columns) &&
+    !anyDuplicated(manifest_paths) &&
+    all(is.finite(manifest$bytes) & manifest$bytes > 0) &&
+    all(grepl("^[0-9a-f]{64}$", manifest$sha256)) &&
+    scenario_manifest_ok && !length(forbidden_manifest_entries),
+  paste0(
+    "entries=", nrow(manifest), ";scenario_artifacts=",
+    length(observed_scenario_artifacts), "/",
+    length(expected_scenario_artifacts), ";missing=",
+    paste(
+      setdiff(expected_scenario_artifacts, observed_scenario_artifacts),
+      collapse = ","
+    ), ";extra=", paste(
+      setdiff(observed_scenario_artifacts, expected_scenario_artifacts),
+      collapse = ","
+    ), ";forbidden=", paste(forbidden_manifest_entries, collapse = ",")
+  )
 )
 active_compact_outputs <- list(
   implementation = implementation,
@@ -470,6 +629,8 @@ active_compact_outputs <- list(
   grid_summary = grid,
   grid_pairs = grid_pairs,
   grid_method_contrasts = grid_contrasts,
+  boundary_summary = boundary,
+  subsampling_summary = subsampling,
   production_manifest = manifest
 )
 obsolete_output_frames <- names(active_compact_outputs)[vapply(
@@ -485,11 +646,7 @@ record_check(
   }
 )
 
-table_names <- c(
-  "table_primary_support.tex", "table_primary_performance.tex",
-  "table_confirmatory_decision.tex", "table_calibration.tex",
-  "table_grid_sensitivity.tex", "table_boundary.tex", "table_subsampling.tex"
-)
+table_names <- PANIC_RENDERED_TABLE_FILES
 verify_table_mirrors <- function() {
   temporary_dir <- tempfile(pattern = "panic-rendered-tables-")
   dir.create(temporary_dir)
@@ -522,7 +679,7 @@ table_mirror_result <- tryCatch(
   }
 )
 record_check(
-  "all seven canonical table mirrors reproduce byte-for-byte",
+  "all six canonical table mirrors reproduce byte-for-byte",
   all(table_mirror_result$matches),
   if (is.null(table_mirror_result$error)) {
     paste0(
@@ -541,26 +698,28 @@ inline_table_result <- tryCatch(
 )
 inline_tables_ok <- !inherits(inline_table_result, "error") &&
   all(inline_table_result$passed == 1L) &&
-  isTRUE(attr(inline_table_result, "no_external_table_references"))
+  isTRUE(attr(inline_table_result, "no_external_table_references")) &&
+  isTRUE(attr(inline_table_result, "exact_marker_inventory"))
 record_check(
-  "manuscript embeds all seven mirrors with no external table dependency",
+  "manuscript embeds all six mirrors with no external table dependency",
   inline_tables_ok,
   if (inherits(inline_table_result, "error")) {
     conditionMessage(inline_table_result)
   } else {
     paste0(
       "matched=", sum(inline_table_result$passed), "/",
-      nrow(inline_table_result), ";external_references=0"
+      nrow(inline_table_result), ";external_references=0;marker_inventory=",
+      if (isTRUE(attr(inline_table_result, "exact_marker_inventory"))) {
+        "exact"
+      } else {
+        attr(inline_table_result, "marker_inventory_detail")
+      }
     )
   }
 )
 table_text <- paste(vapply(table_names, function(name) {
   paste(readLines(assert_file(name), warn = FALSE), collapse = "\n")
 }, character(1)), collapse = "\n")
-decision_table <- paste(
-  readLines(assert_file("table_confirmatory_decision.tex"), warn = FALSE),
-  collapse = "\n"
-)
 record_check(
   "manuscript-facing tables use the three assessed labels",
   !grepl(
@@ -576,24 +735,6 @@ record_check(
     grepl(" & CV & ", table_text, fixed = TRUE),
   paste(table_names, collapse = ",")
 )
-record_check(
-  "confirmatory table agrees with locked decision",
-  grepl(sprintf("%.5f", decision$support_estimate),
-        decision_table, fixed = TRUE) &&
-    grepl(sprintf("%.5f", decision$support_mcse),
-          decision_table, fixed = TRUE) &&
-    grepl(sprintf("%.5f", decision$support_upper_one_sided_95),
-          decision_table, fixed = TRUE) &&
-    grepl(sprintf("%.6f", decision$prediction_estimate),
-          decision_table, fixed = TRUE) &&
-    grepl(sprintf("%.6f", decision$prediction_mcse),
-          decision_table, fixed = TRUE) &&
-    grepl(sprintf("%.6f", decision$prediction_upper_one_sided_95),
-          decision_table, fixed = TRUE) &&
-    grepl("<0.001", gsub("\\\\", "", decision_table), fixed = TRUE),
-  "displayed estimates, upper bounds, and decision thresholds"
-)
-
 manuscript_text <- paste(readLines(manuscript_path, warn = FALSE),
                          collapse = "\n")
 record_check(

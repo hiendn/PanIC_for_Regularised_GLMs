@@ -388,10 +388,6 @@ render_run_configuration <- read.csv(
   file.path(results_dir, "configuration.csv"),
   stringsAsFactors = FALSE, check.names = FALSE
 )
-render_confirmatory_decision <- read.csv(
-  file.path(results_dir, "confirmatory_decision.csv"),
-  stringsAsFactors = FALSE, check.names = FALSE
-)
 render_target_summary <- read.csv(
   file.path(results_dir, "calibration_target_summary.csv"),
   stringsAsFactors = FALSE, check.names = FALSE
@@ -408,17 +404,16 @@ main_tables <- setNames(
     render_primary_performance_table(
       render_simulation_summary, render_run_configuration
     ),
-    render_confirmatory_decision_table(render_confirmatory_decision),
     render_calibration_table(
       render_target_summary, render_diagnostic_summary
     )
   ),
   c(
     "table_primary_support.tex", "table_primary_performance.tex",
-    "table_confirmatory_decision.tex", "table_calibration.tex"
+    "table_calibration.tex"
   )
 )
 write_manuscript_table_subset(main_tables, results_dir)
 
-cat("Confirmatory summaries and canonical table mirrors written to ",
+cat("Simulation summaries and canonical table mirrors written to ",
     results_dir, ".\n", sep = "")

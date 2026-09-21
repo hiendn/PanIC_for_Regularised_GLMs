@@ -10,7 +10,6 @@
 PANIC_TABLE_FILES <- c(
   "table_primary_support.tex",
   "table_primary_performance.tex",
-  "table_confirmatory_decision.tex",
   "table_calibration.tex",
   "table_grid_sensitivity.tex",
   "table_boundary.tex",
@@ -19,6 +18,38 @@ PANIC_TABLE_FILES <- c(
 
 panic_table_marker <- function(kind, name) {
   sprintf("%% %s PANIC INLINE TABLE: %s", kind, name)
+}
+
+panic_marker_inventory <- function(manuscript_lines) {
+  pattern <- "^% (BEGIN|END) PANIC INLINE TABLE: (.+)$"
+  marker_lines <- grep(pattern, manuscript_lines, value = TRUE)
+  matches <- regmatches(marker_lines, regexec(pattern, marker_lines))
+  kinds <- if (length(matches)) {
+    vapply(matches, `[[`, character(1), 2L)
+  } else {
+    character()
+  }
+  names <- if (length(matches)) {
+    vapply(matches, `[[`, character(1), 3L)
+  } else {
+    character()
+  }
+  begin_names <- names[kinds == "BEGIN"]
+  end_names <- names[kinds == "END"]
+  expected <- sort(PANIC_TABLE_FILES)
+  passed <-
+    length(begin_names) == length(PANIC_TABLE_FILES) &&
+    length(end_names) == length(PANIC_TABLE_FILES) &&
+    !anyDuplicated(begin_names) && !anyDuplicated(end_names) &&
+    identical(sort(begin_names), expected) &&
+    identical(sort(end_names), expected)
+  list(
+    passed = passed,
+    detail = paste0(
+      "BEGIN={", paste(begin_names, collapse = ","), "};END={",
+      paste(end_names, collapse = ","), "}"
+    )
+  )
 }
 
 read_text_lines <- function(path) {
@@ -170,6 +201,7 @@ refresh_one_inline_table <- function(manuscript_lines, table_lines, name) {
 verify_inline_tables <- function(manuscript_path, tables_dir,
                                  stop_on_failure = TRUE) {
   manuscript_lines <- read_text_lines(manuscript_path)
+  marker_inventory <- panic_marker_inventory(manuscript_lines)
   details <- character(length(PANIC_TABLE_FILES))
   passed <- logical(length(PANIC_TABLE_FILES))
 
@@ -208,15 +240,25 @@ verify_inline_tables <- function(manuscript_path, tables_dir,
     stringsAsFactors = FALSE
   )
   attr(result, "no_external_table_references") <- no_external_references
+  attr(result, "exact_marker_inventory") <- marker_inventory$passed
+  attr(result, "marker_inventory_detail") <- marker_inventory$detail
 
   if (isTRUE(stop_on_failure) &&
-      (!all(passed) || !no_external_references)) {
+      (!all(passed) || !no_external_references ||
+       !marker_inventory$passed)) {
     failed <- result$table[result$passed != 1L]
     extra <- if (!no_external_references) "external table reference remains"
       else character()
+    marker_problem <- if (!marker_inventory$passed) {
+      paste0("marker inventory is not exactly the six-table contract: ",
+             marker_inventory$detail)
+    } else {
+      character()
+    }
     stop(
       "Inline-table verification failed: ",
-      paste(c(failed, extra), collapse = "; "), call. = FALSE
+      paste(c(failed, extra, marker_problem), collapse = "; "),
+      call. = FALSE
     )
   }
   result
@@ -263,12 +305,12 @@ if (sys.nframe() == 0L) {
   }
   if (mode == "refresh") {
     result <- refresh_inline_tables(manuscript_path, tables_dir)
-    cat("Refreshed and verified seven inline manuscript tables.\n")
+    cat("Refreshed and verified six inline manuscript tables.\n")
   } else {
     result <- verify_inline_tables(
       manuscript_path, tables_dir, stop_on_failure = TRUE
     )
-    cat("Verified seven inline manuscript tables.\n")
+    cat("Verified six inline manuscript tables.\n")
   }
   print(result, row.names = FALSE)
 }

@@ -143,7 +143,7 @@ assert(!anyDuplicated(seed_ledger[c("scenario_id", "replication")]),
        "Seed ledger duplicates a scenario/replication pair")
 seed_columns <- setdiff(names(seed_ledger), c("scenario_id", "replication"))
 assert(!anyDuplicated(unlist(seed_ledger[seed_columns], use.names = FALSE)),
-       "A seed is reused anywhere in the main confirmatory ledger")
+       "A seed is reused anywhere in the main production ledger")
 assert(all(diagnostics$calibration_rows_expected == 10L),
        "A diagnostic row reports a non-locked calibration-row count")
 
@@ -152,12 +152,12 @@ paired <- read_result("paired_method_contrasts.csv")
 scenario_estimands <- read_result("scenario_primary_estimands.csv")
 decision <- read_result("confirmatory_decision.csv")
 sensitivity <- read_result("prediction_margin_sensitivity.csv")
-assert(nrow(simulation_summary) == 21L,
-       "Simulation summary must contain three methods in seven scenarios")
-assert(nrow(paired) == 21L,
-       "Paired summary must contain three comparisons in seven scenarios")
-assert(nrow(scenario_estimands) == 7L && nrow(decision) == 1L,
-       "Confirmatory estimand outputs have the wrong dimensions")
+assert(nrow(simulation_summary) == 3L * nrow(SCENARIOS),
+       "Simulation summary must contain three methods in every scenario")
+assert(nrow(paired) == 3L * nrow(SCENARIOS),
+       "Paired summary must contain three comparisons in every scenario")
+assert(nrow(scenario_estimands) == nrow(SCENARIOS) && nrow(decision) == 1L,
+       "Scenario estimand outputs have the wrong dimensions")
 assert(nrow(sensitivity) == 4L && sum(sensitivity$role == "primary") == 1L,
        "Prediction-margin sensitivity output is incomplete")
 
@@ -325,11 +325,11 @@ close <- function(x, y) isTRUE(all.equal(x, y, tolerance = 1e-12))
 assert(close(decision$support_estimate, support_estimate) &&
          close(decision$support_mcse, support_mcse) &&
          close(decision$support_upper_one_sided_95, support_upper),
-       "Support decision was not reproduced from raw rows")
+       "Support pooled summary was not reproduced from raw rows")
 assert(close(decision$prediction_estimate, prediction_estimate) &&
          close(decision$prediction_mcse, prediction_mcse) &&
          close(decision$prediction_upper_one_sided_95, prediction_upper),
-       "Prediction decision was not reproduced from raw rows")
+       "Prediction pooled summary was not reproduced from raw rows")
 expected_complete <- all(paired_counts == n_rep)
 expected_support_pass <- is.finite(support_upper) && support_upper < 0
 expected_prediction_pass <- is.finite(prediction_upper) &&
@@ -342,17 +342,17 @@ assert(decision$complete_pairing == as.integer(expected_complete) &&
          decision$joint_claim_pass == as.integer(
            expected_complete && expected_support_pass &&
              expected_prediction_pass
-         ), "The locked joint decision rule was applied incorrectly")
+         ), "The reported endpoint flags were computed incorrectly")
 
 required_artifacts <- c(
   "diagnostic_summary.csv", "calibration_target_summary.csv",
   "relative_deviance_denominator_audit.csv",
   "table_primary_support.tex", "table_primary_performance.tex",
-  "table_confirmatory_decision.tex", "table_calibration.tex",
+  "table_calibration.tex",
   "sessionInfo.txt", "environment.txt", "locked_configuration.rds"
 )
 assert(all(file.exists(file.path(results_dir, required_artifacts))),
-       "One or more required confirmatory artifacts are missing")
+       "One or more required simulation artifacts are missing")
 
 reported_diagnostic_summary <- read_result("diagnostic_summary.csv")
 reported_calibration_summary <- read_result("calibration_target_summary.csv")
@@ -360,14 +360,13 @@ expected_tables <- setNames(
   list(
     render_primary_support_table(simulation_summary, configuration),
     render_primary_performance_table(simulation_summary, configuration),
-    render_confirmatory_decision_table(decision),
     render_calibration_table(
       reported_calibration_summary, reported_diagnostic_summary
     )
   ),
   c(
     "table_primary_support.tex", "table_primary_performance.tex",
-    "table_confirmatory_decision.tex", "table_calibration.tex"
+    "table_calibration.tex"
   )
 )
 for (table_name in names(expected_tables)) {
@@ -395,7 +394,7 @@ assert(!grepl(
   ignore.case = TRUE
 ), "A manuscript table exposes internal process wording")
 
-cat("PASS: confirmatory results and decision rule are verified.\n")
-cat("Joint claim decision:", decision$joint_claim_pass, "\n")
+cat("PASS: simulation results and reported endpoint flags are verified.\n")
+cat("Pooled diagnostic flag:", decision$joint_claim_pass, "\n")
 cat("Support upper bound:", format(support_upper, digits = 8), "\n")
 cat("Prediction upper bound:", format(prediction_upper, digits = 8), "\n")

@@ -32,29 +32,58 @@ changed_common_fields <- common_fields[!vapply(common_fields, function(name) {
   identical(prior_config[[name]], CONFIG[[name]])
 }, logical(1))]
 add_check(
-  "only authorized prior-configuration fields changed",
+  "historical baseline and authorized current amendments are preserved",
   identical(
     sort(changed_common_fields),
     sort(c("active_tolerance", "master_seed", "n_rep"))
-  ),
-  paste(changed_common_fields, collapse = ",")
+  ) &&
+    identical(
+      prior_env$SCENARIOS$scenario_id,
+      c(
+        "linear_iid_n500", "linear_iid_n2000",
+        "logistic_iid_n500", "logistic_iid_n2000",
+        "linear_ar1_n1000", "logistic_ar1_n1000",
+        "poisson_iid_n1000"
+      )
+    ) &&
+    identical(
+      SCENARIOS$scenario_id,
+      c(
+        "linear_iid_n500", "linear_iid_n1000",
+        "logistic_iid_n500", "logistic_iid_n1000",
+        "linear_ar1_n500", "linear_ar1_n1000",
+        "logistic_ar1_n500", "logistic_ar1_n1000",
+        "poisson_iid_n500", "poisson_iid_n1000"
+      )
+    ) &&
+    identical(SCENARIOS$n, rep(c(500L, 1000L), 5L)) &&
+    identical(
+      SCENARIOS$rho,
+      c(0, 0, 0, 0, 0.5, 0.5, 0.5, 0.5, 0, 0)
+    ),
+  paste0(
+    "config_fields=", paste(changed_common_fields, collapse = ","),
+    ";active_scenarios=", nrow(SCENARIOS)
+  )
 )
 add_check(
-  "confirmatory replication count is locked",
+  "production replication count is locked",
   identical(CONFIG$n_rep, 1000L),
   paste0("n_rep=", CONFIG$n_rep)
 )
 add_check(
   "production and dedicated-smoke master seeds are locked",
-  identical(CONFIG$master_seed, 2136092001L) &&
+  identical(CONFIG$master_seed, 2146092101L) &&
     identical(CONFIG$grid_sensitivity_master_seed, 2138092001L) &&
     identical(CONFIG$smoke_master_seed, 2140092001L) &&
-    identical(CONFIG$smoke_grid_sensitivity_master_seed, 2142092001L),
+    identical(CONFIG$smoke_grid_sensitivity_master_seed, 2142092001L) &&
+    identical(CONFIG$runtime_master_seed, 2096092101L),
   paste0(
     "main=", CONFIG$master_seed, ";grid=",
     CONFIG$grid_sensitivity_master_seed, ";smoke_main=",
     CONFIG$smoke_master_seed, ";smoke_grid=",
-    CONFIG$smoke_grid_sensitivity_master_seed
+    CONFIG$smoke_grid_sensitivity_master_seed, ";runtime=",
+    CONFIG$runtime_master_seed
   )
 )
 
@@ -88,8 +117,28 @@ smoke_main_streams <- enumerate_streams(
 smoke_grid_streams <- enumerate_streams(
   CONFIG$smoke_grid_sensitivity_master_seed, 500L, 1L
 )
+runtime_streams <- unique(unlist(lapply(seq_len(3L), function(family_index) {
+  unlist(lapply(c(FALSE, TRUE), function(warmup) {
+    replications <- if (warmup) seq_len(CONFIG$runtime_warmup) else
+      seq_len(CONFIG$runtime_replications)
+    unlist(lapply(replications, function(replication) {
+      base <- as.integer(
+        CONFIG$runtime_master_seed + (if (warmup) 500000L else 0L) +
+          100000L * family_index + replication
+      )
+      c(
+        training = base,
+        calibration = as.integer(
+          base + 10000L +
+            1000L * (seq_len(CONFIG$calibration_half_splits) - 1L)
+        ),
+        cv = as.integer(base + 30000L)
+      )
+    }), use.names = FALSE)
+  }), use.names = FALSE)
+}), use.names = FALSE))
 prior_streams <- unlist(lapply(CONFIG$prior_master_seeds, function(seed) {
-  ## One thousand replications in all seven positions is a conservative
+  ## One thousand replications in every configured position is a conservative
   ## superset of every prior main, sensitivity, and development run.
   enumerate_streams(seed, 1000L)
 }), use.names = FALSE)
@@ -110,7 +159,8 @@ add_check(
   {
     stream_sets <- list(
       main = main_streams, grid = grid_streams,
-      smoke_main = smoke_main_streams, smoke_grid = smoke_grid_streams
+      smoke_main = smoke_main_streams, smoke_grid = smoke_grid_streams,
+      runtime = runtime_streams
     )
     pairs <- combn(names(stream_sets), 2L, simplify = FALSE)
     all(vapply(pairs, function(pair) {
@@ -120,7 +170,8 @@ add_check(
   paste0(
     "counts=", paste(
       c(length(main_streams), length(grid_streams),
-        length(smoke_main_streams), length(smoke_grid_streams)),
+        length(smoke_main_streams), length(smoke_grid_streams),
+        length(runtime_streams)),
       collapse = ","
     )
   )
@@ -130,22 +181,24 @@ add_check(
   !any(main_streams %in% prior_streams) &&
     !any(grid_streams %in% prior_streams) &&
     !any(smoke_main_streams %in% prior_streams) &&
-    !any(smoke_grid_streams %in% prior_streams),
+    !any(smoke_grid_streams %in% prior_streams) &&
+    !any(runtime_streams %in% prior_streams),
   paste0("prior_superset_stream_count=", length(prior_streams))
 )
 add_check(
   "all enumerated seeds remain within the R integer range",
   all(c(
     main_streams, grid_streams, smoke_main_streams, smoke_grid_streams,
-    prior_streams
+    runtime_streams, prior_streams
   ) > 0L) &&
     all(c(
       main_streams, grid_streams, smoke_main_streams, smoke_grid_streams,
-      prior_streams
+      runtime_streams, prior_streams
     ) <= .Machine$integer.max),
   paste0(
     "new_range=", paste(range(c(
-      main_streams, grid_streams, smoke_main_streams, smoke_grid_streams
+      main_streams, grid_streams, smoke_main_streams, smoke_grid_streams,
+      runtime_streams
     )), collapse = ":")
   )
 )
@@ -277,7 +330,7 @@ add_check(
 )
 CONFIG$master_seed <- production_master_seed
 add_check(
-  "confirmatory decision constants are locked",
+  "pooled diagnostic constants are locked",
   CONFIG$primary_support_alpha == 0.05 &&
     CONFIG$prediction_noninferiority_alpha == 0.05 &&
     CONFIG$prediction_noninferiority_margin == 0.001 &&
@@ -302,4 +355,4 @@ print(validation, row.names = FALSE)
 if (any(validation$passed != 1L)) {
   stop("One or more deterministic implementation checks failed", call. = FALSE)
 }
-cat("All confirmatory implementation checks passed.\n")
+cat("All simulation implementation checks passed.\n")

@@ -60,7 +60,7 @@ subsampling_samples <- function(x, y, b, n_sub, seed) {
   list(z = z, beta_full = beta_full)
 }
 
-n_values <- c(100L, 500L)
+n_values <- c(500L, 1000L)
 empirical <- lapply(n_values, function(n) {
   boundary_samples(
     n, CONFIG$boundary_replications,
@@ -84,8 +84,8 @@ boundary_summary <- do.call(rbind, lapply(seq_along(n_values), function(i) {
 }))
 write.csv(boundary_summary, file.path(results_dir, "boundary_summary.csv"), row.names = FALSE)
 
-n_full <- 2000L
-b_values <- c(100L, 200L, 400L)
+n_full <- 1000L
+b_values <- c(50L, 100L, 200L)
 set.seed(CONFIG$master_seed + 800002L)
 subsampling_x <- rnorm(n_full)
 subsampling_y <- subsampling_x + rnorm(n_full)
@@ -159,7 +159,8 @@ for (i in seq_along(n_values)) {
 
 plot(
   NA, xlim = c(-3.2, 0.35), ylim = c(0, 1.02),
-  xlab = expression(x), ylab = "subsampling cdf", main = "n = 2000"
+  xlab = expression(x), ylab = "subsampling cdf",
+  main = paste0("n = ", n_full)
 )
 grid <- seq(-3.2, 0.35, length.out = 500L)
 limit_cdf <- ifelse(grid < 0, pnorm(grid), 1)

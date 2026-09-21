@@ -20,7 +20,7 @@
 
 
 
-We thank both reviewers for their careful reading of the manuscript and for the constructive comments. The reviewer comments are reproduced verbatim and in their original order, with each response provided immediately below the comment it addresses. In the accompanying manuscript, substantive reviewer-facing revisions are shown in blue.
+We thank both reviewers for their careful reading of the manuscript and for the constructive comments. The reviewer comments are reproduced below in their original order, with each response provided immediately below the comment it addresses. In the accompanying manuscript, substantive reviewer-facing revisions are shown in blue.
 
 
 \section*{Reviewer 1}
@@ -30,24 +30,24 @@ Eqs. (9)--(10) and Algorithm 1: The modified-BIC penalty uses $df(\widehat\beta_
 
 \response{R1.1}We thank the Reviewer for identifying the distinction between the computational scope of Algorithm 1 and the interpretation of its complexity score. The revised manuscript treats these matters separately.
 
-For Lasso least squares, the number of non-zero slope parameters has the usual degrees-of-freedom interpretation only at a fixed penalty multiplier and under the conditions of Zou et al. [2007]. At a prescribed radius or an adaptively selected multiplier, it is used only as a generic complexity score. For Ridge least squares with an unpenalised intercept, the manuscript centres the design and response, denoted by $\check X$ and $\check y$, and uses the ridge smoother trace
+For centred Lasso least squares, the number of non-zero slope parameters estimates the degrees of freedom of the slope fit at a fixed penalty multiplier under the Gaussian-model and full-rank design conditions of Zou et al. [2007]. An unrestricted unpenalised intercept contributes one additional common degree of freedom. For the compact-intercept fits, a prescribed radius, or an adaptively selected multiplier, the count is used only as a generic complexity score. For Ridge least squares with an unpenalised intercept, the manuscript centres the design and response, denoted by $\check X$ and $\check y$, and uses the centred slope smoother trace
 \[
 \operatorname{tr}\{\check X(\check X^\top \check X+n\lambda I)^{-1}\check X^\top\}
 \]
 for fixed $\lambda>0$. At $\lambda=0$, the inverse is replaced by the Moore--Penrose pseudoinverse, giving $\operatorname{rank}(\check X)$. For Elastic-net, a non-zero parameter count may be used as a bounded generic score, but it is not described as an unbiased degrees-of-freedom estimator. The general computational discussion covers the three convex slope constraints under its stated existence and uniqueness conditions, while Algorithm 1 displays the Lasso case. The complexity interpretation remains model-specific.
 
-Response M1 describes the cumulative-maximum correction and the strictly increasing $\varepsilon\psi(C_k)$ term that supplies penalty separation.
+Response R2.1 describes the cumulative-maximum correction and the strictly increasing $\varepsilon\psi(C_k)$ term that supplies penalty separation.
 
 \subsection*{Comment 2}
 Section 2.1 (eq. (5)) and Section 3.2: it seems PanIC penalties are only valid up to a multiplicative constant $\kappa$, and Section 3.2 states that calibrating $\kappa$ remains an open problem. Yet Tables 2--5 use a $\kappa$ chosen post hoc to minimise \#w.var for each setting, information unavailable without knowing the true model. This sits uneasily with the abstract's claim of a ``practical'' tuning procedure. The authors should either propose a genuinely data-driven rule for $\kappa$ (e.g., cross-validating $\kappa$ itself, or an EBIC-style calibration), or caveat clearly that the reported PanIC performance is oracle/best-case, and soften the abstract's wording accordingly.
 
 \response{R1.2}We agree that the former support-informed choices of $\kappa$ were oracle calibrations. They are no longer used as the implementable primary procedure.
 
-The revised PanIC-CF calibration uses five independently generated balanced half-splits in both directions. In each direction, an ordinary training-half GLM estimates coefficient signs and an independent ordinary validation-half GLM estimates signed magnitudes. Their cross-signed target is projected onto the prespecified radius interval only for scoring, while the raw target is retained for endpoint diagnostics. For a fixed grid of 31 multipliers in $[10^{-2},10^2]$, the procedure computes the asymmetric radius discrepancy in Appendix A, selects the largest multiplier within one descriptive across-row standard error of the minimum, and refits the selected criterion on the full sample. If a required ordinary or constrained fit fails the stated diagnostics, the rule records a calibration failure and uses the prespecified multiplier $\kappa^\dagger=1$. It does not substitute a regularised pilot or use the true support.
+The revised PanIC-CF calibration uses five independently generated balanced half-splits in both directions. In each direction, an ordinary training-half GLM estimates coefficient signs and an independent ordinary validation-half GLM estimates signed magnitudes. Their cross-signed target is projected onto the prespecified radius interval only for scoring, while the raw target is retained for endpoint diagnostics. For a fixed grid of 31 multipliers in $[10^{-2},10^2]$, the procedure computes the asymmetric radius discrepancy in Appendix A, selects the largest multiplier within one descriptive across-row standard error of the minimum, and refits the selected criterion on the full sample. It does not substitute a regularised pilot or use the true support; numerical failure rules are documented in the repository cited in Appendix B.
 
 Appendix A proves that the cross-signed target is root-sample-size consistent whenever the two ordinary half-sample estimators have that rate. The separate compact-multiplier proposition shows that any data-dependent multiplier in a fixed positive compact interval preserves the first-order PanIC target. The manuscript does not claim that every radius is reachable on the finite multiplier grid or that the selected multiplier converges to a unique population optimum.
 
-The primary simulation study assesses PanIC-CF, ordinary minimum-loss five-fold cross-validation labelled CV, and the stated BIC-like methods over 1,000 replications per setting. Support-informed multipliers appear only in separately labelled supplementary oracle diagnostics. The seven-setting comparison reports support superiority over CV together with prediction noninferiority under the stated relative-deviance margin. These are finite-simulation conclusions rather than general dominance claims.
+The primary simulation study assesses PanIC-CF, ordinary minimum-loss five-fold cross-validation labelled CV, and the stated BIC-like methods over 1,000 replications per setting. The primary tables use no support-informed multiplier. Across the ten settings, PanIC-CF had lower mean total support error than CV in every case, and the absolute differences in mean test deviance were at most $0.0004$. These are descriptive comparisons rather than a general superiority or noninferiority claim.
 
 \subsection*{Comment 3}
 Section 2.5 (Theorem 2): The limit law in (18)--(21) is a random quadratic programme over a critical cone with no closed form in general. It is not clear how this result could be used for inference in practice (e.g., simulating/bootstrapping the limit). The authors may consider a small numerical illustration of the non-Gaussian shape under a binding constraint.
@@ -56,7 +56,7 @@ Section 2.5 (Theorem 2): The limit law in (18)--(21) is a random quadratic progr
 \[
 \sqrt n(\widehat\beta_n-\beta^\circ)\rightsquigarrow\min\{G,0\},
 \]
-so the limit has an atom at zero and a Gaussian density on the negative half-line. The simulation section compares this analytic law with finite-sample distributions.
+so the limit has an atom at zero and a Gaussian density on the negative half-line. The simulation section compares this analytic law with finite-sample distributions of the upper-bound estimator. It states why this estimator has the same limit as the two-sided constrained estimator, since the lower boundary is inactive with probability tending to one.
 
 For a fixed candidate, the manuscript also gives a subsampling result for nondegenerate scalar projections. It establishes convergence at continuity points of the limiting distribution and does not claim quantile consistency at the atom. A separate illustration reports sensitivity to the subsample size. For the general fixed-threshold law, the manuscript records the random quadratic programme but does not claim that an ordinary bootstrap is automatically valid at a nonregular boundary. The fixed-candidate subsampling result supplies the operational approximation established in the paper.
 
@@ -72,21 +72,21 @@ The fixed-threshold second-order theorem transfers to a finite-grid selector bec
 \subsection*{Comment 5}
 Section 3: The simulation study covers linear/logistic regression under i.i.d. $N(0,I_{20})$ covariates. Since Poisson/Gamma consistency is a stated contribution (Proposition 1), the authors may add at least a small simulation for one of these cases. Likewise, since Lasso-type selection is known to be sensitive to covariate correlation, one correlated-design scenario may be added (e.g., AR(1) or compound-symmetric) to test robustness relative to CV.
 
-\response{R1.5}We agree. The revised simulation study includes independent and AR(1)-correlated Gaussian and logistic designs, together with an independent Poisson design. Each setting uses $d=20$ and the same ten non-zero coordinates. The manuscript now defines the alternating-sign base vector explicitly and rescales it so that $\beta^{*\top}\Sigma\beta^*=1$. The correlated covariance has entries $0.5^{|r-s|}$ and unit marginal variances. The Poisson intercept is chosen so that the marginal count mean is two.
+\response{R1.5}We agree. The revised simulation study includes independent and AR(1)-correlated Gaussian and logistic designs, together with an independent Poisson design, each at $n\in\{500,1000\}$. Every setting uses $d=20$ and the same ten non-zero coordinates. The manuscript now defines the alternating-sign base vector explicitly and rescales it so that $\beta^{*\top}\Sigma\beta^*=1$. The correlated covariance has entries $0.5^{|r-s|}$ and unit marginal variances. The Poisson intercept is chosen so that the marginal count mean is two.
 
 Gamma regression is covered analytically, including joint estimation of the shape parameter on a compact interval. A separate fixed-shape numerical check produced a convergence warning, so Gamma is not included in the comparative simulation tables. The manuscript states this distinction.
 
 \subsection*{Comment 6}
 Tables 3 and 5: \#w.var combines false positives and false negatives into one count, yet $\kappa$ is calibrated specifically to minimise it. Reporting false-positive and false-negative rates separately would clarify where PanIC's advantage over CV actually comes from.
 
-\response{R1.6}We agree that an aggregate wrong-variable count can conceal different errors. The revised simulation section defines and reports false-positive and false-negative counts, their corresponding rates, exact support recovery, and total support error. It reports the selected grid radius, signed attained-radius error, and independent-test deviance; the attained radius is recovered from the signed error and the stated true radius. A slope is selected if and only if its fitted coefficient is not exactly zero; a coefficient returned as zero by the solver is not selected.
+\response{R1.6}We agree that an aggregate wrong-variable count can conceal different errors. The revised simulation section defines and reports false-positive and false-negative counts, their corresponding rates, exact support recovery, and total support error. It reports the selected grid radius, signed attained-radius error, and independent-test deviance; the attained radius is recovered from the signed error and the stated true radius. A slope is selected if and only if its fitted coefficient after radius interpolation is not exactly zero. No additional magnitude threshold is used.
 
 All methods within a replication are evaluated on the same independent test sample. Neither support information nor test-sample performance enters the PanIC-CF calibration. The discussion therefore separates the observed false-positive and false-negative patterns from the paper's theoretical target, which is the risk-optimal constraint level rather than support-selection consistency.
 
 \subsection*{Comment 7}
 The paper's discussion of consistency for regularised, high dimensional regression (Introduction, para. 3) and its proposed extension to random/data-dependent parameter spaces (Conclusion) overlaps in spirit with recent work on structured (nuisance-vs-interest) high dimensional regression, e.g. Drikvandi (2025). The authors may briefly include this in one of these two places.
 
-\response{R1.7}We thank the Reviewer for this reference. The Introduction now cites Drikvandi [2025] and distinguishes its high-dimensional structured-regression setting from the present fixed-dimensional problem. Drikvandi studies differential regularisation of specified or unspecified parameters of interest and nuisance parameters. The present paper instead studies information-criterion selection of a constraint level in an increasing nested GLM family. The common theme is heterogeneous or structured regularisation, not an identical selection target or asymptotic regime.
+\response{R1.7}We thank the Reviewer for this reference. The Introduction now cites Drikvandi [2025] and distinguishes its high-dimensional structured-regression setting from the present fixed-dimensional problem. Drikvandi studies differential regularisation of specified or unspecified parameters of interest and nuisance parameters. The present paper instead studies information-criterion selection of a constraint level in an increasing nested GLM family. The Introduction discusses this work alongside Fan, Tang and Shi [2018], ``Partial consistency with sparse incidental parameters''. That paper considers a finite-dimensional vector of structural parameters and a high-dimensional sparse vector of incidental parameters. It obtains consistency and asymptotic normality for the structural-parameter estimators and partial selection consistency for the incidental parameters. We distinguish both papers from our fixed-dimensional constraint-level selection target.
 
 \subsection*{Comment 8(a)}
 Section 3.1 does not report the number of grid points $m$ used for $(C_k)$; since both runtime and selection accuracy could depend on it, it is useful to state the value(s) used and, if feasible, comment on sensitivity.
@@ -97,7 +97,7 @@ C_k=(k-1)/6,\qquad k=1,\ldots,121,
 \]
 which spans $[0,20]$ and is common to all replications and methods. The unregularised fit is added to the numerical path when needed, and the manuscript distinguishes the selected grid radius from the attained fitted radius because a constraint may be inactive.
 
-A common-random-number sensitivity study compares 61, 121, and 241 equally spaced radii over the same interval in a representative Gaussian setting. It reports support error, selected radius, test deviance, and fitting time. The manuscript describes the observed grid dependence without extrapolating it to an asymptotic refining-grid claim. The calibration diagnostics are summarised in prose: there were no calibration failures or default uses, and no raw target required nontrivial projection.
+A common-random-number sensitivity study compares 61, 121, and 241 equally spaced radii over the same interval in a representative Gaussian setting. It reports support error, selected radius, test deviance, and fitting time. The manuscript describes the observed grid dependence without extrapolating it to an asymptotic refining-grid claim.
 
 \subsection*{Comment 8(b)}
 The Gamma shape parameter $\nu$ is treated as fixed/known throughout (Section 2.2); it would be useful to clarify whether Proposition 1's consistency would still hold if $\nu$ is estimated, as is typical in practice.
@@ -114,7 +114,14 @@ The additive constant $c_0$ in the penalty shape (22) is fixed at 1; since it en
 \]
 The revised manuscript states this identity. Hence $c_0$ cannot change the selected model and no sensitivity simulation is needed. Its role is only to enforce strictly positive penalties when the smallest threshold is zero.
 
-\section*{Technical Reviewer}
+
+
+\section*{Reviewer 2}
+
+\subsection*{Overall assessment}
+The manuscript addresses an interesting and potentially useful problem: adapting the PanIC and BIC-like information-criteria framework to constrained or regularised generalised linear models (GLMs). Although, it has a promising direction and contains several valuable ideas, especially the attempt to connect consistent information criteria with constrained GLM regularisation and second-order constrained asymptotics, the current version contains technical issues that affect some stated consistency claims. The most serious problem is the definition of the modified degrees-of-freedom term in Equation (10), which is not monotone as written and therefore does not justify the claimed BIC-like penalty condition. There are also important overstatements regarding the extent to which the continuum-indexed theorem justifies data-dependent threshold selectors, as well as simulation-design concerns caused by oracle tuning of the PanIC calibration constant.
+
+\response{R2.0}We thank the Reviewer for the assessment. We agree that the scope of the consistency results and the numerical comparisons needed to be stated more carefully. The manuscript replaces the complexity recurrence by a cumulative maximum and supplies a separate random-grid theorem with explicit coverage, empirical-risk, and penalty conditions. The primary PanIC-CF calibration uses ordinary half-sample fits without true-support information. The manuscript also distinguishes fixed-candidate and exact finite-grid second-order limits from the continuum-selected problem, and numerical interpolation from the exact constrained minimisers. The responses below give the corresponding details.
 
 \subsection*{Major issue M1. The modified degrees-of-freedom definition in Equation (10) is not monotone as written}
 The definition of $\widetilde{\mathrm{df}}$ does not necessarily produce a monotone sequence:
@@ -127,7 +134,7 @@ The definition of $\widetilde{\mathrm{df}}$ does not necessarily produce a monot
 \]
 The second branch uses the raw previous value $\widehat{\mathrm{df}}(\widehat\beta_{k-1,n})$, not the cumulative modified value $\widetilde{\mathrm{df}}(\widehat\beta_{k-1,n})$. Thus monotonicity can fail. For example, if the raw degrees-of-freedom sequence is $(5,6,4,5)$, the above rule gives $(5,6,6,4)$, which decreases at the fourth step. The authors should clarify this point, since the subsequent claim that the modified penalty is strictly monotone, and hence satisfies $\mathrm{B2}^*$, depends on this correction.
 
-\response{M1}We agree. The recurrence has been replaced by
+\response{R2.1}We agree. The recurrence has been replaced by
 \[
 \widetilde D_{1,n}=D_{1,n},\qquad
 \widetilde D_{k,n}=\max\{\widetilde D_{k-1,n},D_{k,n}\}
@@ -135,12 +142,12 @@ The second branch uses the raw previous value $\widehat{\mathrm{df}}(\widehat\be
 \]
 Thus the sequence is nondecreasing. The example $(5,6,4,5)$ becomes $(5,6,6,6)$.
 
-The revised proposition treats $D_{k,n}$ as a generic nonnegative measurable complexity score and proves the required penalty properties. Strict separation is supplied by the term $\varepsilon\psi(C_k)$ with $\varepsilon>0$ and strictly increasing $\psi$. The proof therefore does not rely on an unbiased degrees-of-freedom interpretation. All subsequent uses of the old recurrence have been removed.
+The revised proposition treats $D_{k,n}$ as a generic nonnegative measurable complexity score and proves the required penalty properties. Strict separation is supplied by the term $\varepsilon\psi(C_k)$ with $\varepsilon>0$ and strictly increasing $\psi$. The proof therefore does not rely on an unbiased degrees-of-freedom interpretation.
 
 \subsection*{Major issue M2. The continuum-indexed theory is overstated}
 The manuscript suggests that Theorem 1 justifies finite selectors built from regularisation paths or data-dependent thresholds. However, Theorem 1 is stated for a deterministic compact-valued correspondence $\mathcal L:k\mapsto\mathbb T_k$ with deterministic nested parameter spaces indexed by $k\in[a,b]$. As written, it does not cover random candidate sets, data-dependent grids, empirical path knots, or $n$-dependent grids. The authors should either weaken this claim or add assumptions/results showing that such data-dependent finite selectors preserve consistency.
 
-\response{M2}We agree. The deterministic continuum theorem is now stated only for a continuous correspondence of increasing nested deterministic parameter spaces. It does not by itself cover random path knots or an $n$-dependent candidate list.
+\response{R2.2}We agree. The deterministic continuum theorem is now stated only for a continuous correspondence of increasing nested deterministic parameter spaces. It does not by itself cover random path knots or an $n$-dependent candidate list.
 
 The revised manuscript adds a random-finite-grid theorem. It allows the candidate set to depend arbitrarily on the same observations used for fitting, but requires a measurable grid point approaching the smallest population-optimal threshold from above, pointwise empirical-risk convergence below the target, an empirical optimal-value rate, and fixed-distance penalty separation. The discussion explains how a deterministic mesh can enforce the one-sided coverage condition, while the remaining risk and penalty assumptions still require verification.
 
@@ -149,7 +156,7 @@ The manuscript separately distinguishes exact index consistency on a changing gr
 \subsection*{Major issue M3. The simulation calibration of $\kappa$ uses oracle information}
 The manuscript calibrates PanIC's constant $\kappa$ using the best observed performance in \#w.var, which depends on the true active set and is unavailable in practice. Therefore, the reported PanIC results are oracle-calibrated, weakening the comparison with cross-validation and the modified BIC. The authors should either report a data-driven calibration rule or clearly label these results as oracle-tuned.
 
-\response{M3}We agree. The former support-informed multiplier choices are now labelled as supplementary oracle diagnostics. The primary PanIC-CF procedure is the data-driven repeated two-way cross-signed rule described in Appendix A and summarised in Response R1.2. It uses no true-support or test-sample information.
+\response{R2.3}We agree. The primary tables no longer use support-informed multiplier choices. The primary PanIC-CF procedure is the data-driven repeated two-way cross-signed rule described in Appendix A and summarised in Response R1.2. It uses no true-support or test-sample information.
 
 A compact-range multiplier proposition proves that a possibly data-dependent multiplier in a fixed positive compact interval preserves B1 and B2. The numerical study therefore evaluates an implementable calibration, while the theoretical claim remains limited to preservation of the first-order PanIC target.
 
@@ -160,11 +167,11 @@ R_n(\widehat\beta_{0,k,n},\widehat\beta_{k,n})+\frac{\log n}{n}df(\widehat\beta_
 \]
 is not the standard Gaussian linear-regression BIC unless an appropriate likelihood scaling is imposed. In the usual Gaussian case, BIC is based on $n\log(\mathrm{RSS}/n)+d_k\log n$, or on a known-variance negative log-likelihood scale. Since $R_n$ is a mean squared-error loss, the authors should either call Equation (9) ``BIC-like'' or derive the scaling under which it is equivalent to BIC.
 
-\response{M4}We agree. The revised manuscript calls the criterion BIC-like on the mean-squared-error scale. For Gaussian errors with known variance $\sigma^2$, likelihood BIC is equivalent to minimising
+\response{R2.4}We agree. The revised manuscript calls the criterion BIC-like on the mean-squared-error scale. For Gaussian errors with known variance $\sigma^2$, likelihood BIC is equivalent to minimising
 \[
 R_{k,n}+\sigma^2d_k\frac{\log n}{n}.
 \]
-Thus a unit coefficient on the MSE-scale complexity term is exact only when $\sigma^2=1$ or the squared loss has been divided by $\sigma^2$. If the variance is profiled separately in each model, the equivalent criterion is
+Thus a unit coefficient on the MSE-scale complexity term is exact only when $\sigma^2=1$ or the squared loss has been divided by $\sigma^2$. If the variance is profiled separately in each model and the residual mean square is positive, the equivalent criterion is
 \[
 \log(R_{k,n})+d_k\frac{\log n}{n}.
 \]
@@ -173,30 +180,30 @@ The consistency result is presented as a BIC-like result and does not depend on 
 \subsection*{Major issue M5. Scale dependence of the penalty is not discussed}
 The PanIC penalty shape used in the simulations, $(c_0+C_k)\sqrt{\log n/n}$, depends directly on the constraint level $C_k$. For linear regression, $R_n$ is a mean squared-error loss, whereas $C_k$ is a coefficient-norm bound. The manuscript does not discuss whether predictors and responses are standardised or how the penalty should be scaled. This matters because the selected model may change under rescaling of predictors or responses.
 
-\response{M5}We agree that coefficient-norm thresholds depend on predictor units and that the loss and penalty must be placed on documented scales. The revised manuscript recommends centring and scaling continuous predictors while leaving the intercept unpenalised. For Gaussian regression, it also requires a documented response or loss scale. The penalty uses the dimensionless transformation $\psi(C)=(C-a)/(b-a)$ on a deterministic interval, or the corresponding grid rank on a fixed grid.
+\response{R2.5}We agree that coefficient-norm thresholds depend on predictor units and that the loss and penalty must be placed on documented scales. The revised manuscript recommends centring and scaling continuous predictors while leaving the intercept unpenalised. For Gaussian regression, it also requires a documented response or loss scale. The penalty uses the dimensionless transformation $\psi(C)=(C-a)/(b-a)$ on a deterministic interval, or the corresponding grid rank on a fixed grid.
 
 In the simulations, every predictor has population mean zero and unit marginal variance by construction, including the AR(1) designs, so no empirical standardisation is applied. The Gaussian noise variance is one and the selection loss is divided by that variance. The calibration appendix states that any data-estimated preprocessing must be learned on the training half and applied to the validation half, and notes that random preprocessing requires its own parameter-set justification.
 
 \subsection*{Major issue M6. The intercept compactness assumption needs clarification}
 The paper introduces a compact intercept set $\mathbb U$, but most proofs omit the intercept and state that the extension is immediate. This should be justified explicitly, especially for logistic, Poisson, and Gamma losses, where the intercept enters exponential terms. The authors should show how $\mathbb U$ affects the Lipschitz envelopes, for instance through a factor involving $\sup_{\beta_0\in\mathbb U}|\beta_0|$.
 
-\response{M6}We agree that the intercept cannot simply be omitted for the exponential-link losses. The revised manuscript introduces the augmented covariate $\widetilde x=(1,x^\top)^\top$ and gives explicit Lipschitz moduli on the common compact intercept interval and each compact slope set. For Poisson and Gamma regression, these bounds contain $\exp\{B_{\mathbb U}+B_k\|x\|_2\}$, where $B_{\mathbb U}=\sup_{u\in\mathbb U}|u|$.
+\response{R2.6}We agree that the intercept cannot simply be omitted for the exponential-link losses. The revised manuscript introduces the augmented covariate $\widetilde x=(1,x^\top)^\top$ and gives explicit Lipschitz moduli on the common compact intercept interval and each compact slope set. For Poisson and Gamma regression, these bounds contain $\exp\{B_{\mathbb U}+B_k\|x\|_2\}$, where $B_{\mathbb U}=\sup_{u\in\mathbb U}|u|$.
 
 The corresponding proposition proves square integrability under the stated moment assumptions and verifies the baseline condition using an arbitrary fixed intercept in $\mathbb U$. The paper also clarifies that the formal population targets are defined relative to this common intercept interval. Interpreting them as unrestricted-intercept targets requires the relevant unrestricted population intercepts to lie in its interior.
 
 \subsection*{Major issue M7. Algorithm 1 lacks implementation details}
 Algorithm 1 solves the constrained problem through a Lagrangian formulation and root-finding, but key implementation details are missing. The authors should specify the $\lambda$-search interval, numerical tolerance, treatment of inactive constraints, solver used for logistic regression, whether the intercept is penalised, convergence-failure handling, and the choice of $m$, $M$, and grid spacing. They should also clarify the constraint qualification needed for the constrained--penalised equivalence, since monotonicity alone does not guarantee a one-to-one $C\leftrightarrow\lambda$ correspondence.
 
-\response{M7}We agree. The revised computational section distinguishes existence of a KKT multiplier from a one-to-one radius--multiplier correspondence. For $C>0$, the zero slope together with an interior intercept satisfies Slater's condition. The penalised path is used for root finding only under existence, uniqueness, continuity, and monotonicity conditions. Plateaus and nonunique multipliers are permitted, and the manuscript recommends solving the constrained problem directly when penalised uniqueness fails.
+\response{R2.7}We agree. The revised computational section distinguishes existence of a KKT multiplier from a one-to-one radius--multiplier correspondence. For $C>0$, the zero slope together with an interior intercept satisfies Slater's condition. The penalised path is used for root finding only under existence, uniqueness, continuity, and monotonicity conditions. Plateaus and nonunique multipliers are permitted, and the manuscript recommends solving the constrained problem directly when penalised uniqueness fails.
 
-The implementation returns the unregularised fit for an inactive constraint and the zero-slope fit for $C=0$. A bound on the fitted radius supplies an upper bracket for an active constraint. The numerical study uses an unpenalised-intercept \texttt{glmnet} path with warm starts and interpolation onto the radius grid. The manuscript states that interpolation approximates the exact constrained minimisers and that a small radius residual checks feasibility rather than optimality. Solver settings, convergence checks, and retained code are provided through the code repository identified in the reproducibility appendix.
+The implementation returns the unregularised fit for an inactive constraint and the zero-slope fit for $C=0$; the displayed bound supplies an upper bracket when the constraint is active. The numerical study uses an unpenalised-intercept \texttt{glmnet} path, and the simulation section reports the candidate grids. Solver settings, tie rules, and failure handling are documented in the repository cited in Appendix B.
 
 \subsection*{Major issue M8. The simulation study is not fully reproducible}
 The simulation section lacks several details needed to verify the numerical results independently. The authors should report the number of grid points $m$, the value of $M$, the $\kappa$ values used for PanIC in each scenario, the value of $\varepsilon$ in the modified BIC, random seeds, software/packages and solver versions, stopping tolerances, and whether ``se'' denotes Monte Carlo standard error or standard deviation. Additional clarification is also needed for the calibration and runtime results. Since PanIC is tuned using true-model information, the reported results should be clearly labelled as oracle-calibrated or replaced by a data-driven calibration rule. Figure 1 uses 100 runs whereas the tables use 500 runs, so the variability of the calibration step should be acknowledged. Finally, the number of reported decimal places in the tables should be reduced to match the Monte Carlo uncertainty.
 
-\response{M8}We agree. The revised simulation section reports the seven designs, sample sizes, replication and test-sample counts, the 121-point radius grid, the 31-point multiplier grid, the calibration and cross-validation splits, all evaluation metrics, and tie rules. It identifies reported parenthetical uncertainty as Monte Carlo standard error and distinguishes it from the descriptive across-row standard error used by the calibration rule.
+\response{R2.8}We agree. The revised simulation section reports the ten settings, comprising five designs at $n\in\{500,1000\}$, together with the replication and test-sample counts, the radius and multiplier grids, the calibration and cross-validation splits, the evaluation metrics, and the tie rules. It identifies reported parenthetical uncertainty as Monte Carlo standard error and distinguishes it from the descriptive across-row standard error used by the calibration rule.
 
-The reproducibility appendix identifies R 4.4.0, \texttt{glmnet} 4.1-10, and \texttt{Matrix} 1.7-0 and links to the code and retained numerical outputs. The code repository identified in the reproducibility appendix provides the numerical implementation and retained outputs. Replication and timing schemes are stated in the accompanying prose or concise captions, and the tables report Monte Carlo standard errors alongside the corresponding estimates.
+Appendix B identifies the software versions and links to the GitHub repository containing the reproduction code, numerical settings, and retained outputs. The tables report Monte Carlo standard errors alongside the corresponding estimates.
 
 \subsection*{Major issue M9. Fixed-grid assumptions should be clarified}
 The verification of condition B2 for the penalty in Equation (22) assumes that the grid spacing $C_l-C_k$ does not shrink with $n$. If the grid becomes finer as $n$ increases, then $\sqrt n(P_{l,n}-P_{k,n})$ may fail to diverge. The authors should state that the candidate grid is fixed in $n$, or add an explicit spacing condition for $n$-dependent grids, such as
@@ -204,7 +211,7 @@ The verification of condition B2 for the penalty in Equation (22) assumes that t
 \sqrt{\log n}\min_{l>k}(C_l-C_k)\to\infty.
 \]
 
-\response{M9}We agree. The baseline exact-index analysis uses a grid fixed in $n$, so every adjacent transformed gap is a positive constant. For an ordered $n$-dependent grid, the revised manuscript defines
+\response{R2.9}We agree. The baseline exact-index analysis uses a grid fixed in $n$, so every adjacent transformed gap is a positive constant. For an ordered $n$-dependent grid, the revised manuscript defines
 \[
 \Delta_{\psi,n}=\min_{1\le k<m_n}\{\psi(C_{k+1,n})-\psi(C_{k,n})\}.
 \]
@@ -215,7 +222,7 @@ The random-grid theorem has a different target. Threshold consistency compares c
 \subsection*{Minor suggestion m1. Codomain of the GLM mean function}
 The manuscript writes the GLM mean function as $h(\cdot;\beta_0,\beta):\mathcal X\to\mathcal Y$. This is imprecise for several GLMs. For logistic regression, $Y\in\{0,1\}$ while $h(x)\in(0,1)$; for Poisson regression, $Y\in\mathbb Z_{\geq0}$ while $h(x)>0$. A clearer notation would be $h(\cdot;\beta_0,\beta):\mathcal X\to\mathcal M$, where $\mathcal M$ denotes the mean-parameter space.
 
-\response{m1}We agree. The regression formulation, parameter-space definitions, and algorithm now use
+\response{R2.10}We agree. The regression formulation, parameter-space definitions, and algorithm now use
 \[
 h(\cdot;\beta_0,\beta):\mathcal X\to\mathcal M,
 \]
@@ -224,17 +231,17 @@ where $\mathcal M$ is the mean-parameter space. This separates the response supp
 \subsection*{Minor suggestion m2. Response supports should be stated explicitly}
 The assumptions in Proposition 1 should explicitly include the response supports associated with each GLM: $Y\in\{0,1\}$ for logistic regression, $Y\in\mathbb Z_{\geq0}$ for Poisson regression, and $Y>0$ almost surely for Gamma regression. The last condition is relevant because the Gamma loss involves $\log Y$.
 
-\response{m2}We agree. The consistency proposition now states $Y\in\{0,1\}$ almost surely for logistic regression, $Y\in\mathbb Z_{\ge0}$ almost surely for Poisson regression, and $Y>0$ almost surely for Gamma regression. The Gamma condition is used explicitly in the log-likelihood and log-moment assumptions.
+\response{R2.11}We agree. The consistency proposition now states $Y\in\{0,1\}$ almost surely for logistic regression, $Y\in\mathbb Z_{\ge0}$ almost surely for Poisson regression, and $Y>0$ almost surely for Gamma regression. The Gamma condition is used explicitly in the log-likelihood and log-moment assumptions.
 
 \subsection*{Minor suggestion m3. The modified BIC is used for logistic regression without theory}
 The modified BIC consistency result is proved only for regularised linear regression, but the criterion is also used in the logistic simulations and discussed positively. This is acceptable as an empirical benchmark, provided the authors state that the logistic modified-BIC results are exploratory and are not covered by Proposition 2.
 
-\response{m3}We agree. The simulation introduction and primary-results discussion state that the logistic and Poisson rows labelled BIC-like are exploratory non-zero-parameter-count analogues. They are not presented as consequences of the proved BIC-like consistency proposition, whose scope is regularised linear least squares.
+\response{R2.12}We agree. The simulation introduction and primary-results discussion state that the logistic and Poisson rows labelled BIC-like are exploratory non-zero-parameter-count analogues. They are not presented as consequences of the proved BIC-like consistency proposition, whose scope is regularised linear least squares.
 
 \subsection*{Minor suggestion m4. Minor clarifications and presentation suggestions}
 The name PanIC is introduced without explanation; since it is not standard terminology, the authors should briefly explain its meaning at first use. Also, expressions such as ``min arg min'' in Equations (1), (4), and (10) are understandable as tie-breaking rules, but the notation should be written more carefully, for example as $\min\arg\min$. Finally, in Table 1 the Poisson and Gamma models use the same mean function because both are written with a log link. This is valid, but the authors may wish to state explicitly that the Gamma regression is being considered with a log link, not the canonical inverse link.
 
-\response{m4}We have made all three clarifications. The Introduction explains that PanIC uses the Greek prefix ``pan'', meaning ``all'' or ``of everything''. The selectors are written as the minimum of an explicitly braced argmin set, which makes the tie rule unambiguous. The regression table states that Gamma regression uses a log link rather than the canonical inverse link.
+\response{R2.13}We have made all three clarifications. The Introduction explains that PanIC uses the Greek prefix ``pan'', meaning ``all'' or ``of everything''. The selectors are written as the minimum of an explicitly braced argmin set, which makes the tie rule unambiguous. The regression table states that Gamma regression uses a log link rather than the canonical inverse link.
 
 \subsection*{Minor suggestion m5. Grammar, clarity, and presentation issues}
 \begin{center}
@@ -250,6 +257,6 @@ Figure 1 & Plot labels use $\sigma=1,2,5$ but the caption is not sufficiently ex
 \end{tabular}
 \end{center}
 
-\response{m5}We have made the listed terminology corrections, including consistent use of $\mathrm{B2}^*$, ``intercept'', ``mitigate'', and ``obtain''. The manuscript identifies reported parenthetical uncertainty as Monte Carlo standard error and distinguishes it from the descriptive across-row standard error used by the calibration rule. It identifies the non-Gaussian BIC-like comparisons as exploratory. The simulation prose and concise captions give the relevant replication or timing scheme, exact solver-zero support convention, test-sample size, and method scope.
+\response{R2.14}We have made the listed terminology corrections, including consistent use of $\mathrm{B2}^*$, ``intercept'', ``mitigate'', and ``obtain''. The manuscript defines reported parenthetical uncertainty as Monte Carlo standard error, and the revised captions state the relevant replication or timing scheme.
 
 \end{document}

@@ -1,13 +1,16 @@
 # Locked methods and outputs
 
-## Inherited simulation design
+## Primary simulation design
 
-The study retains seven data-generating settings, a 20-dimensional coefficient
-vector with ten active slopes, the inherited signal scaling, an independent
-test sample of size 2,000, and a radius interval `[0,20]`. The primary path has
-121 equally spaced radii. Calibration uses 31 log-spaced multipliers from
-`0.01` to `100` and five balanced half-splits scored in both directions. The
-solver controls and failure policy are shared across methods.
+The study crosses five data-generating designs with `n = 500` and `n = 1000`:
+independent Gaussian, independent logistic, correlated Gaussian, correlated
+logistic, and independent Poisson regression. Each of the ten settings uses a
+20-dimensional coefficient vector with ten active slopes, the inherited signal
+scaling, and an independent test sample of size 2,000. The radius interval is
+`[0,20]`, with 121 equally spaced radii on the primary path. Calibration uses
+31 log-spaced multipliers from `0.01` to `100` and five balanced half-splits
+scored in both directions. Solver controls and failure handling are shared
+across methods.
 
 The frozen sources in `reference_implementation/` document the preceding
 numerical engine. The active method set, support rule, seeds, and outputs are
@@ -75,7 +78,7 @@ taken. No numerical coefficient threshold is applied. The separate path-radius
 interpolation tolerance remains a solver-accuracy diagnostic and is not a
 support threshold.
 
-## Primary estimands and joint decision
+## Paired descriptive diagnostics
 
 For scenario `s` and replication `r`, the paired support contrast is
 
@@ -84,17 +87,11 @@ d_sr = (FP + FN)_PanIC-CF,sr - (FP + FN)_CV,sr.
 ```
 
 If `dbar_s` and `se_s` are its scenario mean and Monte Carlo standard error,
-the equal-weight effect and MCSE are
+the equal-weight ten-setting summary and MCSE are
 
 ```text
-Delta_support = (1/7) * sum_s dbar_s,
-MCSE_support  = (1/7) * sqrt(sum_s se_s^2).
-```
-
-Support superiority passes when
-
-```text
-Delta_support + qnorm(0.95) * MCSE_support < 0.
+Delta_support = (1/10) * sum_s dbar_s,
+MCSE_support  = (1/10) * sqrt(sum_s se_s^2).
 ```
 
 The paired prediction contrast is
@@ -105,14 +102,12 @@ q_sr = (D_PanIC-CF,sr - D_CV,sr) / D_CV,sr.
 
 Every CV denominator must be finite and strictly positive. A violation stops
 analysis and verification; no row is deleted and no denominator is floored or
-replaced. Prediction noninferiority passes when the one-sided 95% upper Monte
-Carlo bound for the equal-weight mean is below `0.001`. Margins `0.0005`,
-`0.0025`, and `0.005` are sensitivity summaries only.
-
-The joint conclusion requires complete PanIC-CF/CV pairing in all seven
-settings and both component decisions to pass. Scenario-specific contrasts,
-comparisons with BIC-like, and the grid study cannot rescue a failed joint
-decision.
+replaced. `confirmatory_decision.csv` retains the equal-weight support and
+prediction summaries, their one-sided 95% upper Monte Carlo bounds, and
+legacy-named flags against zero and `0.001`. Those flags are internal
+descriptive diagnostics only. They are not a release gate, and no pooled
+superiority or noninferiority conclusion is required to pass. Margins
+`0.0005`, `0.0025`, and `0.005` are likewise sensitivity summaries.
 
 ## Failure and numerical policy
 
@@ -122,23 +117,24 @@ prespecified multiplier `kappa=1` and records the failure and default. If a CV
 fold path fails, the CV row is marked failed. No failed estimate is silently
 replaced.
 
-The production decision requires all 1,000 paired observations in every
+The production summaries require all 1,000 paired observations in every
 scenario. The solver, interpolation, warning, projection, endpoint, and timing
 diagnostics are retained even when they are not displayed in the compact
 manuscript tables.
 
 ## Seed families
 
-The fresh locked seeds are:
+The active seeds are:
 
-- main production: `2136092001`;
+- main production: `2146092101`;
 - grid production: `2138092001`;
+- runtime benchmark: `2096092101`;
 - main smoke: `2140092001`; and
 - grid smoke: `2142092001`.
 
-The new method set and exact-nonzero policy were locked before these seed
-families were used. Earlier development, production, grid, and smoke families
-are listed as prior or retired and are included in the non-overlap audit.
+The preceding main seed `2136092001` is retired. It and the earlier
+development, production, grid, and smoke families are listed as prior inputs
+to the non-overlap audit.
 
 ## Main outputs
 
@@ -151,17 +147,26 @@ are listed as prior or retired and are included in the non-overlap audit.
 - `seed_ledger.csv`: every explicit training, calibration-split, CV-fold, and
   test seed.
 - `simulation_summary.csv`: means and Monte Carlo standard errors for the
-  three methods in seven scenarios.
+  three methods in ten scenarios.
 - `paired_method_contrasts.csv`: the three pairwise method comparisons in each
   scenario.
-- `paired_panic_cf_vs_cv.csv`: the PanIC-CF/CV rows used by the joint decision.
-- `scenario_primary_estimands.csv` and `confirmatory_decision.csv`: the seven
-  scenario effects and equal-weight joint gate.
+- `paired_panic_cf_vs_cv.csv`: the scenario-level PanIC-CF/CV contrasts.
+- `scenario_primary_estimands.csv`: the ten scenario-level effects.
+- `confirmatory_decision.csv`: the internal equal-weight descriptive
+  diagnostic; it is not a manuscript table or release gate.
 - `prediction_margin_sensitivity.csv`: the primary and sensitivity margins.
 - `relative_deviance_denominator_audit.csv`: the denominator-domain and
   finite-moment audit.
 - `diagnostic_summary.csv` and `calibration_target_summary.csv`: compact
   numerical and target diagnostics.
+
+## Boundary and subsampling outputs
+
+The binding-boundary illustration is evaluated at `n = 500` and `n = 1000`.
+The subsampling illustration uses one full sample of size `n = 1000` and
+`b = 50, 100, 200`. The retained summaries are `boundary_summary.csv` and
+`subsampling_summary.csv`, accompanied by
+`figure_boundary_subsampling.pdf` and the two corresponding table mirrors.
 
 ## Grid outputs
 
@@ -178,12 +183,16 @@ is not a column of the manuscript grid table.
 
 ## Deterministic manuscript tables
 
-`Manuscript_Table_Rendering.R` renders the seven table mirrors from compact CSV
-summaries without fitting a model or drawing a random number. The primary
-performance table retains selected radius and signed attained-radius error but
-does not repeat attained radius. The calibration table displays target, bias,
-and multiplier summaries; detailed operational counts remain in the diagnostic
-files. The grid table contains only the three active methods and omits runtime.
+`Manuscript_Table_Rendering.R` renders six table mirrors from compact CSV
+summaries without fitting a model or drawing a random number. They are
+`table_primary_support.tex`, `table_primary_performance.tex`,
+`table_calibration.tex`, `table_grid_sensitivity.tex`, `table_boundary.tex`,
+and `table_subsampling.tex`. No confirmatory-decision table is generated. The
+primary performance table retains selected radius and signed attained-radius
+error but does not repeat attained radius. The calibration table displays
+target, bias, and multiplier summaries; detailed operational counts remain in
+the diagnostic files. The grid table contains only the three active methods
+and omits runtime.
 
 `manuscript/main.tex` embeds exact copies of the rendered tables between stable
 marker comments. `Manuscript_Table_Tools.R --verify` checks byte-for-byte

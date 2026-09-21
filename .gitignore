@@ -44,12 +44,11 @@ results/*
 !results/subsampling_summary.csv
 !results/solver_validation.csv
 !results/gamma_validation.csv
-# These retained table fragments are checksum-controlled mirrors of the seven
+# These retained table fragments are checksum-controlled mirrors of the six
 # table blocks embedded in manuscript/main.tex; they are not LaTeX compilation
 # inputs.
 !results/table_primary_support.tex
 !results/table_primary_performance.tex
-!results/table_confirmatory_decision.tex
 !results/table_calibration.tex
 !results/table_grid_sensitivity.tex
 !results/table_boundary.tex

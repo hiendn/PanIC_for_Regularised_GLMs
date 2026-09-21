@@ -3,7 +3,7 @@
 ## master_seed; see seed_ledger.csv in the generated results.
 
 CONFIG <- list(
-  master_seed = 2026091801L,
+  master_seed = 2146092101L,
   n_rep = 500L,
   n_test = 2000L,
   d = 20L,
@@ -33,17 +33,19 @@ CONFIG <- list(
 
 SCENARIOS <- data.frame(
   scenario_id = c(
-    "linear_iid_n500", "linear_iid_n2000",
-    "logistic_iid_n500", "logistic_iid_n2000",
-    "linear_ar1_n1000", "logistic_ar1_n1000",
-    "poisson_iid_n1000"
+    "linear_iid_n500", "linear_iid_n1000",
+    "logistic_iid_n500", "logistic_iid_n1000",
+    "linear_ar1_n500", "linear_ar1_n1000",
+    "logistic_ar1_n500", "logistic_ar1_n1000",
+    "poisson_iid_n500", "poisson_iid_n1000"
   ),
   family = c(
     "gaussian", "gaussian", "binomial", "binomial",
-    "gaussian", "binomial", "poisson"
+    "gaussian", "gaussian", "binomial", "binomial",
+    "poisson", "poisson"
   ),
-  n = c(500L, 2000L, 500L, 2000L, 1000L, 1000L, 1000L),
-  rho = c(0, 0, 0, 0, 0.5, 0.5, 0),
+  n = rep(c(500L, 1000L), 5L),
+  rho = c(0, 0, 0, 0, 0.5, 0.5, 0.5, 0.5, 0, 0),
   stringsAsFactors = FALSE
 )
 

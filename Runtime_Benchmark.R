@@ -23,9 +23,9 @@ results_dir <- if (grepl("^/", output_name)) output_name else
 dir.create(results_dir, recursive = TRUE, showWarnings = FALSE)
 
 runtime_seed <- function(family_index, replication, warmup = FALSE) {
-  offset <- if (warmup) 9500000L else 9000000L
-  as.integer(CONFIG$master_seed + offset + 100000L * family_index +
-               abs(as.integer(replication)))
+  warmup_offset <- if (warmup) 500000L else 0L
+  as.integer(CONFIG$runtime_master_seed + warmup_offset +
+               100000L * family_index + abs(as.integer(replication)))
 }
 
 runtime_dataset <- function(family, family_index, replication,
@@ -313,6 +313,7 @@ writeLines(
     paste0("Machine: ", Sys.info()[["machine"]]),
     hardware_summary,
     "Timing worker count: 1",
+    paste0("Runtime master seed: ", CONFIG$runtime_master_seed),
     paste0("Warm-up runs per family and method: ", CONFIG$runtime_warmup),
     paste0("Timed replications per family and method: ",
            CONFIG$runtime_replications),

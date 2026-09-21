@@ -1,14 +1,14 @@
-PanIC-CF confirmatory method lock
-=================================
+PanIC-CF production method lock
+===============================
 
 Lock status
 -----------
 
-The active method set, literal exact-nonzero rule, primary estimands, margins,
-decision rules, failure policy, and new seed families were fixed before the
-fresh-seed regeneration. This lock does not claim to precede earlier
-exploratory or historical outputs, which are not part of the regenerated
-confirmatory evidence.
+The active method set, literal exact-nonzero rule, revised ten-setting design,
+failure policy, and new main seed family were fixed before the fresh-seed
+regeneration. This lock does not claim to precede earlier exploratory or
+historical outputs. Pooled PanIC-CF/CV contrasts are retained as code-side
+diagnostics; they are not a manuscript claim or a release gate.
 
 The numerical lineage is retained under `reference_implementation/`. Those
 frozen files provide shared generic primitives and historical auditability;
@@ -33,9 +33,9 @@ The PanIC-CF undershoot weight is
 
     omega(n_V) = sqrt(log(log(n_V + exp(exp(1))))).
 
-The scenarios, signal construction, independent test size 2,000, radius
-interval `[0,20]`, 121-point primary radius grid, multiplier grid, solver
-controls, and calibration default `kappa=1` are otherwise unchanged.
+The signal construction, independent test size 2,000, radius interval
+`[0,20]`, 121-point primary radius grid, multiplier grid, solver controls, and
+calibration default `kappa=1` are unchanged.
 
 Exact support rule
 ------------------
@@ -50,24 +50,26 @@ the cumulative maximum is formed. No post hoc numerical coefficient threshold
 is authorized. The interpolation-radius tolerance remains a solver-accuracy
 check only.
 
-Confirmatory design and decision
---------------------------------
+Production design and descriptive diagnostics
+---------------------------------------------
 
-The main master seed is 2136092001, with 1,000 replications in each of seven
-scenarios. The primary support effect is the equal-weight mean of
+The main master seed is 2146092101, with 1,000 replications in each of ten
+settings. Independent and AR(1)-correlated Gaussian and logistic designs, and
+the independent Poisson design, are each evaluated at `n=500` and `n=1000`.
+The code records the equal-weight mean of
 
     (FP + FN)_PanIC-CF - (FP + FN)_CV.
 
-Support superiority passes when its one-sided 95% upper normal Monte Carlo
-bound is below zero. The prediction endpoint is the equal-weight mean of
+and its one-sided 95% upper normal Monte Carlo bound. It also records the
+equal-weight mean of
 
     (D_PanIC-CF - D_CV) / D_CV.
 
-Prediction noninferiority passes when its one-sided 95% upper normal Monte
-Carlo bound is below 0.001. Margins 0.0005, 0.0025, and 0.005 are sensitivity
-summaries only. A joint conclusion requires complete pairing in all seven
-scenarios and both component decisions to pass. Scenario-specific, BIC-like,
-and grid comparisons cannot change the joint decision.
+and its one-sided 95% upper normal Monte Carlo bound, together with the
+reference margin 0.001 and sensitivity margins 0.0005, 0.0025, and 0.005.
+These flags provide an auditable summary of the realised run but are not used
+to authorize a formal superiority, noninferiority, or joint claim. All pooled
+summaries require complete PanIC-CF/CV pairing in all ten settings.
 
 Every CV denominator in the relative-deviance endpoint must be finite and
 strictly positive. A violation is a hard failure: no replication is removed
@@ -78,17 +80,20 @@ Seed families
 
 The grid-sensitivity master seed is 2138092001, with 500 common-random-number
 replications at 61, 121, and 241 radius points. Dedicated smoke mode uses main
-and grid seeds 2140092001 and 2142092001.
+and grid seeds 2140092001 and 2142092001. The one-worker runtime benchmark uses
+the separate master seed 2096092101.
 
 The non-overlap audit includes the following prior or retired families:
 
     2026091801  2026091802  2036091802  2046091802  2056091802
     2066091802  2076091802  2086091802  2106091802  2126091802
+    2136092001
 
 It enumerates training, five calibration-split, CV-fold, and test streams;
-checks pairwise separation of the four new production/smoke families; checks
-separation from conservative supersets of every prior family; and verifies
-that all seeds remain in R's positive integer range. Smoke mode cannot write
+checks pairwise separation of the four production/smoke families and the
+runtime stream family; checks separation from conservative supersets of every
+prior family; and verifies that all seeds remain in R's positive integer
+range. Smoke mode cannot write
 to the committed results directory or consume a production seed.
 
 Failure and output contract
@@ -112,24 +117,24 @@ Locked critical sources
 537d3cd266dd880453d194de9c03a7cbbbcdbaa7352f0b197886818d0dd97a5e  reference_implementation/config.R
 9128cd0112cd3c679fef5d5601c22a4232293e2c38a9dae7e7caa6d2f3762c68  reference_implementation/path_functions.R
 5df27ca79d5da1e7440b6c7b23874bdbdf62772fd02680fe9822136be8ffe568  reference_implementation/revised_cf_functions.R
-f2aa99d0cf0e757094ded5dfb82acae9ddc9d1f68d6597c05d50bf955452564f  Simulation_Config.R
-13c5ea17482470a8c58c9b7de0e405f3747bbdbb5f306137123cf837fb5c8d32  Auxiliary_Config.R
+5fab4ed3e741c7328aa07266ef9263b96a0858abd4f4647cf4ef9efd2c015de6  Simulation_Config.R
+6dacfb9fc14a1b6d71eccd72f47e728a2d279584f7cabf69b186e6fc17992744  Auxiliary_Config.R
 5a1bbb20a6dc2dc0cec5a04caa2d90c2d99134e5aafa70f44a5861c8879ed090  PanIC_CF_Functions.R
 983439b550a1fe05e33b2d9b2b56e2919167832af67659e882f1f4e792f839f3  Auxiliary_Simulation_Functions.R
 98f5ebd09b04fa1af2d061181ae9e94646d178793e350089493fd55352666588  Method_Lock_Verification.R
-ba6fd9263baffd01e19fbc1de7cb769e42cbd38116ed7194b98f896dc8847420  Implementation_Validation.R
-896b58e22a53cb7ffd4356b7297c6758ceb25cd6b3c6f76f7da0036c7b7fe6e6  Run_Confirmatory_Simulations.R
-ca0f44fd83d8b622aa0cd24496372deb6dba3bc144f22b806cdd4a19fd636a60  Simulation_Results_Analysis.R
-df71a2de035686ea41cc4d13ea2b14698b052a0245c4c18febae9c94b5bed8df  Results_Verification.R
+ad5ddc509e7aceb5af4cb8b08e5ef890e4c85c374f96bd93343494bd8d3872c6  Implementation_Validation.R
+a343a15b3e6430fa18e2a01e5aec957d46730af0215406a375936b2cb4f84574  Run_Confirmatory_Simulations.R
+3ed5ce4f5b05ecb0c6bf2749a3929bbcca1cf1f7c231d624953dbbe47cbd7b54  Simulation_Results_Analysis.R
+70230da8c25befda0db40548f87960c5e302e2d25afd7439180a37036f63b601  Results_Verification.R
 13aa20890e46d60dfef7fbeefe9039a13da67ad6c544f39ce002bbd72a18e451  Simulation_Study.R
 b6362924386fa20f4187f735304eb50ff4594d66a185a8ad7afd2e7ead2cace5  Grid_Sensitivity_Study.R
-47ce3da584031588b83402e2b5f512b3f1a0cb5d45d2c4ed0892e2418300f77d  Grid_Results_Verification.R
+4ceb355dae2b8b64575d86d62f98e281a4df7ea104c07844b65b8dd0c1901eb0  Grid_Results_Verification.R
 532b768a345fe04e0dbb848ca018b66fc5c172657bd7c5cc327839eead382d14  Grid_Sensitivity_Pipeline.R
-683b4daed1d1453cbbfd7dadc0e450e63f7cb306e1377b70d0c10309b403b467  Boundary_Subsampling_Study.R
+739b182407efc732fe3a78084ccd1baa0a4c8127bbbca796e5ef6019fe5e1a27  Boundary_Subsampling_Study.R
 79bdbdc8fbc8ea692a31fbef587e22d3708408c4e7ce1c3c8637d76fa1f0adfb  Solver_Validation.R
-de428aabf475fc2b4354a2c1fdfea553592f2f817fd5595abb6f5fca13a78793  Runtime_Benchmark.R
+e6222300c942383819ca52c0a82bd1234f12f1b6b600b69e34ac2e14209f8bd3  Runtime_Benchmark.R
 9d039e547afa7c99244bdaad1d72dd6b809aa15ba5c814f3fe12391f71b0208f  Render_Runtime_Figure.R
-ddc6fc53c6bb68997e26c6bf2aee4b95ee6cb1362a79a67e566c3d5f0acdb6b2  Manuscript_Table_Rendering.R
+509b50d12a28e7ca32f6bec44d5c26af3b05542d9b85a9b1cd3714f219d08ed6  Manuscript_Table_Rendering.R
 eb0c410777a5bf1f4e7280ea8fd48603691d5771a3bc38fd3dc3ff2ab91dfc27  Render_Manuscript_Tables.R
-06c5d103f260b50610775e3e51d782679b2d86ca90c8dccd07dc4193b2ff2767  Manuscript_Table_Tools.R
-12c0d1354ca5dd0baedbe33cd88a1888a42abe12bc6c7c5f95d87d3f0bd4257c  Repository_Verification.R
+8dd7f600840164a05f853961e77dc54ebde74d0604ee0baf480af6f7b7d9e597  Manuscript_Table_Tools.R
+89882c98f94e45a01b167d266c2c8357cbf5d287dd9769cb231020db2abc33b8  Repository_Verification.R
